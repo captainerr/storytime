@@ -70,7 +70,7 @@
       story.textContent = '';
 
       try {
-        const response = await fetch('/api/generate-story', { method: 'POST' });
+        const response = await fetch('/api/generate-story', { method: 'POST', cache: 'no-store' });
 
         if (!response.ok) {
           const errorText = await response.text();
