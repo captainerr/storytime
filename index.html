@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storytime</title>
+<style>
+  :root {
+    color-scheme: light dark;
+  }
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+    line-height: 1.6;
+  }
+  h1 {
+    font-size: 1.5rem;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .controls {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+  button {
+    font-size: 1.1rem;
+    padding: 0.75rem 1.75rem;
+    border-radius: 999px;
+    border: none;
+    background: #4b3f72;
+    color: white;
+    cursor: pointer;
+  }
+  button:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  #status {
+    text-align: center;
+    font-style: italic;
+    opacity: 0.75;
+    min-height: 1.5em;
+    margin-bottom: 1rem;
+  }
+  #story {
+    white-space: pre-wrap;
+    font-size: 1.1rem;
+  }
+</style>
+</head>
+<body>
+  <h1>🌙 Storytime</h1>
+  <div class="controls">
+    <button id="generate">Generate Story</button>
+  </div>
+  <div id="status"></div>
+  <div id="story"></div>
+
+  <script>
+    const button = document.getElementById('generate');
+    const status = document.getElementById('status');
+    const story = document.getElementById('story');
+
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      status.textContent = 'Generating story...';
+      story.textContent = '';
+
+      try {
+        const response = await fetch('/api/generate-story', { method: 'POST' });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || `Request failed with status ${response.status}`);
+        }
+
+        const text = await response.text();
+        story.textContent = text;
+        status.textContent = '';
+      } catch (err) {
+        status.textContent = `Something went wrong: ${err.message}`;
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

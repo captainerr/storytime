@@ -1,0 +1,13 @@
+{
+  "name": "storytime",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A one-button bedtime story generator powered by Groq.",
+  "scripts": {
+    "dev": "wrangler pages dev .",
+    "deploy": "wrangler pages deploy ."
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}
