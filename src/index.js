@@ -7,7 +7,7 @@ Rules:
 - Plain prose only: no markdown, no headings, no bullet points, no title line.
 - Write a new, original story each time; vary characters and settings.`;
 
-export async function onRequestPost({ env }) {
+async function generateStory(env) {
   if (!env.GROQ_API_KEY) {
     return new Response('Server is missing GROQ_API_KEY configuration.', { status: 500 });
   }
@@ -56,3 +56,15 @@ export async function onRequestPost({ env }) {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   });
 }
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+
+    if (url.pathname === '/api/generate-story' && request.method === 'POST') {
+      return generateStory(env);
+    }
+
+    return env.ASSETS.fetch(request);
+  },
+};

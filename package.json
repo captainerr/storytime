@@ -4,8 +4,8 @@
   "private": true,
   "description": "A one-button bedtime story generator powered by Groq.",
   "scripts": {
-    "dev": "wrangler pages dev .",
-    "deploy": "wrangler pages deploy ."
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
   },
   "devDependencies": {
     "wrangler": "^3.90.0"
