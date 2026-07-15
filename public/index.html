@@ -133,7 +133,7 @@
     const story = document.getElementById('story');
     const illustration = document.getElementById('illustration');
 
-    button.addEventListener('click', async () => {
+    async function generateStory() {
       button.disabled = true;
       status.textContent = 'Generating story...';
       story.textContent = '';
@@ -162,7 +162,10 @@
       } finally {
         button.disabled = false;
       }
-    });
+    }
+
+    button.addEventListener('click', generateStory);
+    generateStory();
   </script>
 </body>
 </html>
