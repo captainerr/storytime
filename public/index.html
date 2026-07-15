@@ -4,9 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Storytime</title>
+<script>
+  // Runs before CSS paints, so the page never flashes the wrong theme.
+  (function () {
+    var saved = localStorage.getItem('theme');
+    document.documentElement.setAttribute('data-theme', saved === 'light' ? 'light' : 'dark');
+  })();
+</script>
 <style>
   :root {
-    color-scheme: light dark;
+    color-scheme: dark;
+    --bg: #14121f;
+    --fg: #eee9f7;
+    --muted: #b3a9cc;
+    --button-bg: #6c56c9;
+    --button-fg: #ffffff;
+    --toggle-border: #4b3f72;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #faf8ff;
+    --fg: #221c33;
+    --muted: #5c5470;
+    --button-bg: #4b3f72;
+    --button-fg: #ffffff;
+    --toggle-border: #d8d0ef;
   }
   body {
     font-family: Georgia, 'Times New Roman', serif;
@@ -14,6 +36,24 @@
     margin: 0 auto;
     padding: 3rem 1.5rem 4rem;
     line-height: 1.6;
+    background: var(--bg);
+    color: var(--fg);
+  }
+  #theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    border: 1px solid var(--toggle-border);
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   h1 {
     font-size: 1.5rem;
@@ -25,23 +65,23 @@
     justify-content: center;
     margin-bottom: 2rem;
   }
-  button {
+  button#generate {
     font-size: 1.1rem;
     padding: 0.75rem 1.75rem;
     border-radius: 999px;
     border: none;
-    background: #4b3f72;
-    color: white;
+    background: var(--button-bg);
+    color: var(--button-fg);
     cursor: pointer;
   }
-  button:disabled {
+  button#generate:disabled {
     opacity: 0.6;
     cursor: default;
   }
   #status {
     text-align: center;
     font-style: italic;
-    opacity: 0.75;
+    color: var(--muted);
     min-height: 1.5em;
     margin-bottom: 1rem;
   }
@@ -52,6 +92,7 @@
 </style>
 </head>
 <body>
+  <button id="theme-toggle" aria-label="Toggle light/dark theme"></button>
   <h1>🌙 Storytime</h1>
   <div class="controls">
     <button id="generate">Generate Story</button>
@@ -60,6 +101,25 @@
   <div id="story"></div>
 
   <script>
+    const themeToggle = document.getElementById('theme-toggle');
+
+    function currentTheme() {
+      return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    }
+
+    function renderToggleIcon() {
+      themeToggle.textContent = currentTheme() === 'light' ? '🌙' : '☀️';
+    }
+
+    themeToggle.addEventListener('click', () => {
+      const next = currentTheme() === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      renderToggleIcon();
+    });
+
+    renderToggleIcon();
+
     const button = document.getElementById('generate');
     const status = document.getElementById('status');
     const story = document.getElementById('story');
