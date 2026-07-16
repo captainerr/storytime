@@ -12,4 +12,4 @@ binding = "AI"
 [[d1_databases]]
 binding = "DB"
 database_name = "storytime-library"
-database_id = "PASTE_DATABASE_ID_HERE"
+database_id = "2331a812-9747-4019-9f5a-b3abbf08df04"
