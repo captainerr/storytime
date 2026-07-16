@@ -60,11 +60,10 @@
     color: var(--fg);
   }
 
-  /* ── Theme toggle ──────────────────────────────────── */
-  #theme-toggle {
+  /* ── Fixed corner buttons ───────────────────────────── */
+  #theme-toggle, #library-link {
     position: fixed;
     top: 1rem;
-    right: 1rem;
     width: 2.75rem;
     height: 2.75rem;
     border-radius: 50%;
@@ -76,7 +75,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    text-decoration: none;
   }
+  #theme-toggle { right: 1rem; }
+  #library-link { right: 4.25rem; }
 
   /* ── Title ─────────────────────────────────────────── */
   h1 {
@@ -446,6 +448,7 @@
 </head>
 <body>
   <button id="theme-toggle" aria-label="Toggle light/dark theme"></button>
+  <a id="library-link" href="/library" aria-label="Browse the library">📚</a>
   <h1>🌙 Storytime</h1>
   <div class="title-ornament">❧ &nbsp; ❧ &nbsp; ❧</div>
   <div class="controls">
