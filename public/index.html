@@ -272,6 +272,28 @@
     opacity: 1;
   }
 
+  /* ── Read aloud ────────────────────────────────────── */
+  #audio-controls {
+    text-align: center;
+    margin-bottom: 1.6rem;
+  }
+  .read-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    padding: 0.4rem 1.1rem;
+    border-radius: 99px;
+    border: 1px solid var(--toggle-border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Lora', serif;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .read-btn:hover { color: var(--fg); border-color: var(--muted); }
+  .read-btn.playing { color: var(--accent); border-color: var(--accent); }
+
   /* ── Story ─────────────────────────────────────────── */
   #story {
     font-family: 'EB Garamond', serif;
@@ -599,6 +621,12 @@
 
   <div id="status"></div>
   <div id="story-title"></div>
+  <div id="audio-controls" hidden>
+    <button id="read-btn" class="read-btn" aria-label="Read story aloud">
+      <svg id="read-icon" viewBox="0 0 16 16" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M5 3.5l8 4.5-8 4.5V3.5z"/></svg>
+      <span id="read-label">Read aloud</span>
+    </button>
+  </div>
   <div id="story"></div>
   <img id="illustration" alt="Illustration for tonight's story">
   <div id="save-prompt" hidden>
@@ -669,6 +697,10 @@
     const button          = document.getElementById('generate');
     const status          = document.getElementById('status');
     const storyTitle      = document.getElementById('story-title');
+    const audioControls   = document.getElementById('audio-controls');
+    const readBtn         = document.getElementById('read-btn');
+    const readIcon        = document.getElementById('read-icon');
+    const readLabel       = document.getElementById('read-label');
     const story           = document.getElementById('story');
     const illustration    = document.getElementById('illustration');
     const savePrompt      = document.getElementById('save-prompt');
@@ -857,6 +889,70 @@
       }, 550);
     }
 
+    // ── Read aloud ────────────────────────────────────────────────
+    const PLAY_ICON  = '<path d="M5 3.5l8 4.5-8 4.5V3.5z"/>';
+    const PAUSE_ICON = '<rect x="3" y="2.5" width="3.5" height="11" rx="1"/><rect x="9.5" y="2.5" width="3.5" height="11" rx="1"/>';
+
+    function setReadState(state) {
+      if (state === 'playing') {
+        readIcon.innerHTML = PAUSE_ICON;
+        readLabel.textContent = 'Pause';
+        readBtn.classList.add('playing');
+      } else if (state === 'paused') {
+        readIcon.innerHTML = PLAY_ICON;
+        readLabel.textContent = 'Resume';
+        readBtn.classList.remove('playing');
+      } else {
+        readIcon.innerHTML = PLAY_ICON;
+        readLabel.textContent = 'Read aloud';
+        readBtn.classList.remove('playing');
+      }
+    }
+
+    function stopReading() {
+      speechSynthesis.cancel();
+      setReadState('idle');
+    }
+
+    function getBritishVoice() {
+      const voices = speechSynthesis.getVoices();
+      return voices.find(v => v.name === 'Daniel')                          // iOS British male
+          || voices.find(v => v.name.toLowerCase().includes('british'))
+          || voices.find(v => v.lang === 'en-GB' && /male|man/i.test(v.name))
+          || voices.find(v => v.lang === 'en-GB')
+          || voices.find(v => v.lang.startsWith('en'))
+          || null;
+    }
+
+    readBtn.addEventListener('click', () => {
+      if (speechSynthesis.speaking && !speechSynthesis.paused) {
+        speechSynthesis.pause();
+        setReadState('paused');
+        return;
+      }
+      if (speechSynthesis.paused) {
+        speechSynthesis.resume();
+        setReadState('playing');
+        return;
+      }
+      if (!currentStoryData?.story) return;
+      const utt = new SpeechSynthesisUtterance(currentStoryData.story);
+      // Voices may load async on first call — re-query at speak time
+      utt.voice = getBritishVoice();
+      utt.lang  = 'en-GB';
+      utt.rate  = 0.88;
+      utt.pitch = 0.9;
+      utt.onend   = () => setReadState('idle');
+      utt.onerror = () => setReadState('idle');
+      speechSynthesis.speak(utt);
+      setReadState('playing');
+    });
+
+    // Voices load asynchronously in some browsers
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = () => {};
+    }
+
     // ── Save to library ───────────────────────────────────────────
     let currentStoryData = null;
 
@@ -924,9 +1020,12 @@
     // ── Story generation ──────────────────────────────────────────
     async function generateStory() {
       cancelAnim();
+      stopReading();
       button.disabled = true;
       storyTitle.textContent = '';
       storyTitle.classList.remove('visible');
+      audioControls.hidden = true;
+      setReadState('idle');
       story.innerHTML = '';
       illustration.removeAttribute('src');
       illustration.style.display = 'none';
@@ -969,6 +1068,7 @@
           length: adv.length,
         };
         stopLoadingAnim();
+        audioControls.hidden = false;
         animateStory(data.story, showSavePrompt);
         status.textContent = '';
 
