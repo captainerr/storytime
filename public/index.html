@@ -198,8 +198,8 @@
     letter-spacing: 0.01em;
     white-space: pre-wrap;
   }
-  /* The iconic storybook drop cap */
-  #story::first-letter {
+  /* Drop cap — JS creates a .drop-cap span for animation control */
+  .drop-cap {
     font-family: 'UnifrakturMaguntia', cursive;
     font-size: 5.2em;
     float: left;
@@ -207,6 +207,29 @@
     padding-right: 0.06em;
     padding-top: 0.06em;
     color: var(--accent);
+    animation: dropCapReveal 1.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes dropCapReveal {
+    0%   { opacity: 0; filter: blur(20px) brightness(3);   text-shadow: 0 0 50px var(--accent), 0 0 25px var(--accent); }
+    20%  { opacity: 0.7; filter: blur(7px) brightness(1.6); text-shadow: 0 0 20px var(--accent); }
+    60%  { opacity: 1; filter: blur(1.5px) brightness(1.1); text-shadow: 0 0 8px var(--accent); }
+    100% { opacity: 1; filter: blur(0px) brightness(1);    text-shadow: 0 0 3px rgba(200,146,42,0.15); }
+  }
+  /* Glowing quill cursor */
+  .quill-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.05em;
+    background: var(--accent);
+    vertical-align: text-bottom;
+    border-radius: 1px;
+    margin-left: 1px;
+    box-shadow: 0 0 7px 2px var(--accent);
+    animation: quillPulse 0.5s ease-in-out infinite;
+  }
+  @keyframes quillPulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.25; }
   }
 
   /* ── Illustration ──────────────────────────────────── */
@@ -616,11 +639,83 @@
       updateBadge();
     });
 
+    // ── Story animation ───────────────────────────────────────────
+    let animRunning = false;
+    let animCancel  = null;
+    let skipCtrl    = null;
+
+    function cancelAnim() {
+      if (animCancel) { animCancel(); animCancel = null; }
+      if (skipCtrl)   { skipCtrl.abort(); skipCtrl = null; }
+      animRunning = false;
+    }
+
+    function animateStory(fullText) {
+      cancelAnim();
+
+      const first = fullText.charAt(0);
+      const rest  = fullText.slice(1);
+
+      story.innerHTML = '';
+
+      const cap    = document.createElement('span');
+      cap.className   = 'drop-cap';
+      cap.textContent = first;
+
+      const body   = document.createElement('span');
+      body.className  = 'story-body';
+
+      const cursor = document.createElement('span');
+      cursor.className = 'quill-cursor';
+
+      story.append(cap, body, cursor);
+
+      animRunning = true;
+      let cancelled = false;
+      let i = 0;
+      let lastTs = null;
+
+      function finish() {
+        body.textContent = rest;
+        cursor.remove();
+        story.style.cursor = '';
+        story.removeAttribute('title');
+        animRunning = false;
+        animCancel  = null;
+        if (skipCtrl) { skipCtrl.abort(); skipCtrl = null; }
+      }
+
+      animCancel = () => { cancelled = true; finish(); };
+
+      // Tap anywhere on the story to skip
+      skipCtrl = new AbortController();
+      story.style.cursor = 'pointer';
+      story.title = 'Tap to reveal full story';
+      story.addEventListener('click', cancelAnim, { signal: skipCtrl.signal });
+
+      // Give the drop cap a head start, then stream the body
+      setTimeout(() => {
+        if (cancelled) return;
+        function tick(ts) {
+          if (cancelled) return;
+          if (lastTs === null) lastTs = ts;
+          const add = Math.max(1, Math.floor((ts - lastTs) * 220 / 1000));
+          i = Math.min(i + add, rest.length);
+          body.textContent = rest.slice(0, i);
+          lastTs = ts;
+          if (i < rest.length) requestAnimationFrame(tick);
+          else finish();
+        }
+        requestAnimationFrame(tick);
+      }, 550);
+    }
+
     // ── Story generation ──────────────────────────────────────────
     async function generateStory() {
+      cancelAnim();
       button.disabled = true;
       status.textContent = 'Writing your story…';
-      story.textContent = '';
+      story.innerHTML = '';
       illustration.removeAttribute('src');
       illustration.style.display = 'none';
 
@@ -644,7 +739,8 @@
         }
 
         const data = await response.json();
-        story.textContent = data.story;
+        animateStory(data.story);
+        status.textContent = '';
 
         if (data.image) {
           illustration.src = data.image;
@@ -652,8 +748,6 @@
         } else if (data.imageError) {
           status.textContent = `Illustration unavailable: ${data.imageError}`;
         }
-
-        if (!data.imageError) status.textContent = '';
       } catch (err) {
         status.textContent = `Something went wrong: ${err.message}`;
       } finally {
