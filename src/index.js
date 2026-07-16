@@ -7,7 +7,7 @@ Rules for the story:
 - Plain prose only: no markdown, no headings, no bullet points, no title line.
 - Write a new, original story each time; vary characters and settings.
 
-Rules for the illustration prompt (image_prompt):
+Rules for the illustration prompt:
 - Describe one specific, gentle scene from the story you just wrote: the main character, the setting, and the mood.
 - Write it as a visual description for an image generator, not as narrative prose.
 - Style: soft, warm children's picture-book illustration, gentle colors, cozy lighting.
@@ -15,7 +15,7 @@ Rules for the illustration prompt (image_prompt):
 - Absolutely no text, letters, words, numbers, or writing of any kind should appear in the described image — describe only visual scenery/characters.
 - 1-2 sentences, concise.
 
-Respond with ONLY a JSON object with exactly two string fields: "story" and "image_prompt". No other text, no markdown code fences, no explanation.`;
+Format your reply EXACTLY like this and nothing else: first the full story text, then a line containing only ===ILLUSTRATION===, then the illustration prompt. Do not use JSON, markdown, headings, quotes around the sections, or any other labels.`;
 
 const THEMES = [
   'a quiet forest', 'a cozy cottage', 'a starry meadow', 'a gentle river',
@@ -97,7 +97,6 @@ async function generateStory(env, request) {
         model,
         temperature: 1,
         seed,
-        response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           {
@@ -112,7 +111,7 @@ async function generateStory(env, request) {
   }
 
   if (!groqResponse.ok) {
-    const errorBody = await groqResponse.text();
+    const errorBody = (await groqResponse.text()).slice(0, 300);
     return new Response(`Groq API error (${groqResponse.status}): ${errorBody}`, { status: 502 });
   }
 
@@ -128,25 +127,25 @@ async function generateStory(env, request) {
     return new Response('Groq response did not contain a message.', { status: 502 });
   }
 
-  let parsed;
-  try {
-    const cleaned = rawContent.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
-    parsed = JSON.parse(cleaned);
-  } catch (err) {
-    return new Response(`Groq response was not valid JSON: ${err.message}`, { status: 502 });
+  const DELIMITER = '===ILLUSTRATION===';
+  const delimiterIndex = rawContent.indexOf(DELIMITER);
+  let story;
+  let imagePrompt;
+  if (delimiterIndex === -1) {
+    // No illustration marker: use the whole reply as the story, skip the image.
+    story = rawContent.trim();
+    imagePrompt = '';
+  } else {
+    story = rawContent.slice(0, delimiterIndex).trim();
+    imagePrompt = rawContent.slice(delimiterIndex + DELIMITER.length).trim();
   }
-
-  const story = typeof parsed.story === 'string' ? parsed.story.trim() : '';
-  const imagePrompt = typeof parsed.image_prompt === 'string' ? parsed.image_prompt.trim() : '';
 
   if (!story) {
     return new Response('Groq response did not contain a story.', { status: 502 });
   }
-  if (!imagePrompt) {
-    return new Response('Groq response did not contain an image_prompt.', { status: 502 });
-  }
 
-  const image = await generateImage(env, imagePrompt);
+  // The illustration is best-effort: no prompt means no image, story still renders.
+  const image = imagePrompt ? await generateImage(env, imagePrompt) : null;
 
   return new Response(JSON.stringify({ story, image }), {
     headers: {
