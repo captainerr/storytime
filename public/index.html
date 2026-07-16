@@ -190,6 +190,22 @@
     margin-bottom: 1.5rem;
   }
 
+  /* ── Story title ───────────────────────────────────── */
+  #story-title {
+    font-family: 'EB Garamond', serif;
+    font-size: 1.9rem;
+    font-style: italic;
+    text-align: center;
+    color: var(--fg);
+    margin-bottom: 1.5rem;
+    line-height: 1.3;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  #story-title.visible {
+    opacity: 1;
+  }
+
   /* ── Story ─────────────────────────────────────────── */
   #story {
     font-family: 'EB Garamond', serif;
@@ -461,6 +477,7 @@
   </div>
 
   <div id="status"></div>
+  <div id="story-title"></div>
   <div id="story"></div>
   <img id="illustration" alt="Illustration for tonight's story">
 
@@ -525,6 +542,7 @@
     // ── DOM refs ──────────────────────────────────────────────────
     const button          = document.getElementById('generate');
     const status          = document.getElementById('status');
+    const storyTitle      = document.getElementById('story-title');
     const story           = document.getElementById('story');
     const illustration    = document.getElementById('illustration');
     const sillyMeter      = document.getElementById('silly-meter');
@@ -715,6 +733,8 @@
       cancelAnim();
       button.disabled = true;
       status.textContent = 'Writing your story…';
+      storyTitle.textContent = '';
+      storyTitle.classList.remove('visible');
       story.innerHTML = '';
       illustration.removeAttribute('src');
       illustration.style.display = 'none';
@@ -739,6 +759,8 @@
         }
 
         const data = await response.json();
+        storyTitle.textContent = data.title || '';
+        setTimeout(() => storyTitle.classList.add('visible'), 80);
         animateStory(data.story);
         status.textContent = '';
 

@@ -4,7 +4,7 @@ Rules for the story:
 - Calm, gentle pacing with cozy, warm imagery. No violence, scares, or peril beyond mild, easily-resolved conflict.
 - No matter how silly the requested tone is, the story must still end on a peaceful, sleepy, comforting note — it's still a bedtime story.
 - Roughly 600-800 words, which reads aloud in about 3-5 minutes.
-- Plain prose only: no markdown, no headings, no bullet points, no title line.
+- Plain prose only: no markdown, no headings, no bullet points within the story body.
 - Write a new, original story each time; vary characters and settings.
 
 Rules for the illustration prompt:
@@ -15,7 +15,7 @@ Rules for the illustration prompt:
 - Absolutely no text, letters, words, numbers, or writing of any kind should appear in the described image — describe only visual scenery/characters.
 - 1-2 sentences, concise.
 
-Format your reply EXACTLY like this and nothing else: first the full story text, then a line containing only ===ILLUSTRATION===, then the illustration prompt. Do not use JSON, markdown, headings, quotes around the sections, or any other labels.`;
+Format your reply EXACTLY like this and nothing else: first a single title line (an evocative children's book title, no trailing punctuation), then a line containing only ===STORY===, then the full story text, then a line containing only ===ILLUSTRATION===, then the illustration prompt. Do not use JSON, markdown, headings, quotes, or any other labels.`;
 
 const THEMES = [
   'a quiet forest', 'a cozy cottage', 'a starry meadow', 'a gentle river',
@@ -141,19 +141,31 @@ async function generateStory(env, request) {
     return new Response('Groq response did not contain a message.', { status: 502 });
   }
 
+  // Split title from story body on ===STORY===
+  const storyMatch = rawContent.match(/=+\s*STORY\s*=+/i);
+  let title;
+  let storyAndImage;
+  if (!storyMatch) {
+    title = '';
+    storyAndImage = rawContent;
+  } else {
+    title = rawContent.slice(0, storyMatch.index).trim();
+    storyAndImage = rawContent.slice(storyMatch.index + storyMatch[0].length);
+  }
+
   // Tolerant match: the model sometimes splits "===ILLUSTRATION===" across a
   // line break or varies the number of '=' signs. Anchor on the word itself
   // with surrounding '=' and whitespace so any of those variants still splits.
-  const delimiterMatch = rawContent.match(/=+\s*ILLUSTRATION\s*=*/i);
+  const delimiterMatch = storyAndImage.match(/=+\s*ILLUSTRATION\s*=*/i);
   let story;
   let imagePrompt;
   if (!delimiterMatch) {
     // No illustration marker: use the whole reply as the story, skip the image.
-    story = rawContent.trim();
+    story = storyAndImage.trim();
     imagePrompt = '';
   } else {
-    story = rawContent.slice(0, delimiterMatch.index).trim();
-    imagePrompt = rawContent.slice(delimiterMatch.index + delimiterMatch[0].length).trim();
+    story = storyAndImage.slice(0, delimiterMatch.index).trim();
+    imagePrompt = storyAndImage.slice(delimiterMatch.index + delimiterMatch[0].length).trim();
   }
 
   if (!story) {
@@ -169,7 +181,7 @@ async function generateStory(env, request) {
     imageError = result.error;
   }
 
-  return new Response(JSON.stringify({ story, image, imageError }), {
+  return new Response(JSON.stringify({ title, story, image, imageError }), {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': 'no-store',
