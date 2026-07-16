@@ -127,17 +127,19 @@ async function generateStory(env, request) {
     return new Response('Groq response did not contain a message.', { status: 502 });
   }
 
-  const DELIMITER = '===ILLUSTRATION===';
-  const delimiterIndex = rawContent.indexOf(DELIMITER);
+  // Tolerant match: the model sometimes splits "===ILLUSTRATION===" across a
+  // line break or varies the number of '=' signs. Anchor on the word itself
+  // with surrounding '=' and whitespace so any of those variants still splits.
+  const delimiterMatch = rawContent.match(/=+\s*ILLUSTRATION\s*=*/i);
   let story;
   let imagePrompt;
-  if (delimiterIndex === -1) {
+  if (!delimiterMatch) {
     // No illustration marker: use the whole reply as the story, skip the image.
     story = rawContent.trim();
     imagePrompt = '';
   } else {
-    story = rawContent.slice(0, delimiterIndex).trim();
-    imagePrompt = rawContent.slice(delimiterIndex + DELIMITER.length).trim();
+    story = rawContent.slice(0, delimiterMatch.index).trim();
+    imagePrompt = rawContent.slice(delimiterMatch.index + delimiterMatch[0].length).trim();
   }
 
   if (!story) {
