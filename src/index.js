@@ -76,14 +76,31 @@ async function generateStory(env, request) {
   }
 
   const model = env.GROQ_MODEL || 'llama-3.3-70b-versatile';
-  const theme = THEMES[Math.floor(Math.random() * THEMES.length)];
-  const character = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
   const seed = Math.floor(Math.random() * 2 ** 31);
 
   const body = await request.json().catch(() => ({}));
   const silliness = resolveSilliness(body.silliness);
   const storyGuidance = SILLINESS_TIERS[silliness].guidance;
   const imageGuidance = IMAGE_SILLINESS_GUIDANCE[silliness];
+
+  const character = (body.character && CHARACTERS.includes(body.character))
+    ? body.character
+    : CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
+  const theme = (body.theme && THEMES.includes(body.theme))
+    ? body.theme
+    : THEMES[Math.floor(Math.random() * THEMES.length)];
+
+  const LENGTH_OVERRIDES = [
+    'Keep it short: roughly 350-450 words (about 2 minutes read-aloud).',
+    null,
+    'Make it longer: roughly 900-1100 words (about 5-6 minutes read-aloud).',
+  ];
+  const lengthIndex = [0, 1, 2].includes(Number(body.length)) ? Number(body.length) : 1;
+  const moral = (body.moral && body.moral !== 'none') ? body.moral : null;
+
+  let userMessage = `Please write tonight's bedtime story. Feature ${character} as the main character, set in ${theme}. Tone: ${storyGuidance}${imageGuidance}`;
+  if (LENGTH_OVERRIDES[lengthIndex]) userMessage += ` ${LENGTH_OVERRIDES[lengthIndex]}`;
+  if (moral) userMessage += ` Weave in a gentle moral about ${moral}.`;
 
   let groqResponse;
   try {
@@ -99,10 +116,7 @@ async function generateStory(env, request) {
         seed,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
-          {
-            role: 'user',
-            content: `Please write tonight's bedtime story. Feature ${character} as the main character, set in ${theme}. Tone: ${storyGuidance}${imageGuidance}`,
-          },
+          { role: 'user', content: userMessage },
         ],
       }),
     });

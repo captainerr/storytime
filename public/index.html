@@ -65,7 +65,7 @@
     align-items: center;
     justify-content: center;
     gap: 1.5rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
   }
   button#generate {
     font-size: 1.1rem;
@@ -102,6 +102,169 @@
     background: var(--toggle-border);
     cursor: pointer;
   }
+  /* Advanced link */
+  .adv-link-wrap {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  #adv-open {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  #adv-open:hover { color: var(--fg); }
+  .adv-badge {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: var(--button-bg);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  /* Overlay */
+  .adv-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 1rem;
+  }
+  .adv-overlay[hidden] { display: none; }
+  /* Panel card */
+  .adv-panel {
+    background: var(--bg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .adv-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .adv-panel-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+  .adv-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.6rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    font-family: inherit;
+  }
+  .adv-close:hover { color: var(--fg); }
+  .adv-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .adv-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+  .adv-select {
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    font-family: inherit;
+    width: 100%;
+    cursor: pointer;
+  }
+  /* Length segmented control */
+  .length-options {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .length-btn {
+    flex: 1;
+    background: var(--bg);
+    color: var(--muted);
+    border: 1px solid var(--toggle-border);
+    border-radius: 8px;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .length-btn.selected {
+    background: var(--button-bg);
+    color: var(--button-fg);
+    border-color: var(--button-bg);
+  }
+  /* Panel silliness slider */
+  .adv-silly-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  #adv-silly-meter {
+    flex: 1;
+    accent-color: var(--button-bg);
+    cursor: pointer;
+  }
+  #adv-silly-label {
+    font-size: 0.9rem;
+    color: var(--fg);
+    min-width: 4.5rem;
+  }
+  /* Panel footer */
+  .adv-panel-footer {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    padding-top: 0.25rem;
+    border-top: 1px solid var(--toggle-border);
+  }
+  #adv-reset {
+    background: none;
+    border: 1px solid var(--toggle-border);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  #adv-reset:hover { color: var(--fg); }
+  #adv-done {
+    background: var(--button-bg);
+    color: var(--button-fg);
+    border: none;
+    border-radius: 999px;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
   #status {
     text-align: center;
     font-style: italic;
@@ -132,11 +295,77 @@
       <span id="silly-meter-label">Calm</span>
     </div>
   </div>
+  <div class="adv-link-wrap">
+    <button id="adv-open" aria-haspopup="dialog">⚙ Customize story <span id="adv-badge" class="adv-badge" hidden aria-hidden="true"></span></button>
+  </div>
+
+  <!-- Advanced settings panel -->
+  <div id="adv-overlay" class="adv-overlay" hidden>
+    <div class="adv-panel" role="dialog" aria-modal="true" aria-label="Customize story">
+      <div class="adv-panel-header">
+        <span class="adv-panel-title">Customize story</span>
+        <button id="adv-close" class="adv-close" aria-label="Close">×</button>
+      </div>
+
+      <div class="adv-field">
+        <label class="adv-label" for="adv-character">Character</label>
+        <select id="adv-character" class="adv-select">
+          <option value="">Random (surprise me)</option>
+        </select>
+      </div>
+
+      <div class="adv-field">
+        <label class="adv-label" for="adv-theme">Setting</label>
+        <select id="adv-theme" class="adv-select">
+          <option value="">Random (surprise me)</option>
+        </select>
+      </div>
+
+      <div class="adv-field">
+        <label class="adv-label" for="adv-moral">Moral of the story</label>
+        <select id="adv-moral" class="adv-select">
+          <option value="">None (let the story decide)</option>
+          <option value="kindness">Kindness</option>
+          <option value="courage">Courage</option>
+          <option value="friendship">Friendship</option>
+          <option value="patience">Patience</option>
+          <option value="sharing">Sharing</option>
+          <option value="honesty">Honesty</option>
+          <option value="perseverance">Perseverance</option>
+          <option value="gratitude">Gratitude</option>
+        </select>
+      </div>
+
+      <div class="adv-field">
+        <span class="adv-label">Story length</span>
+        <div class="length-options">
+          <button class="length-btn" data-length="0">Short<br><small>~2 min</small></button>
+          <button class="length-btn selected" data-length="1">Medium<br><small>~4 min</small></button>
+          <button class="length-btn" data-length="2">Long<br><small>~6 min</small></button>
+        </div>
+      </div>
+
+      <div class="adv-field">
+        <label class="adv-label" for="adv-silly-meter">Silliness</label>
+        <div class="adv-silly-wrap">
+          <input type="range" id="adv-silly-meter" min="0" max="4" step="1" value="0">
+          <span id="adv-silly-label">Calm</span>
+        </div>
+      </div>
+
+      <div class="adv-panel-footer">
+        <button id="adv-reset">Reset to defaults</button>
+        <button id="adv-done">Done</button>
+      </div>
+    </div>
+  </div>
+
   <div id="status"></div>
   <div id="story"></div>
   <img id="illustration" alt="Illustration for tonight's story">
 
   <script>
+    // ── Theme toggle ──────────────────────────────────────────────
     const themeToggle = document.getElementById('theme-toggle');
 
     function currentTheme() {
@@ -156,18 +385,161 @@
 
     renderToggleIcon();
 
-    const button = document.getElementById('generate');
-    const status = document.getElementById('status');
-    const story = document.getElementById('story');
-    const illustration = document.getElementById('illustration');
-    const sillyMeter = document.getElementById('silly-meter');
-    const sillyMeterLabel = document.getElementById('silly-meter-label');
+    // ── Data ──────────────────────────────────────────────────────
+    const CHARACTERS_LIST = [
+      'a small fox', 'a curious rabbit', 'a young owl', 'a gentle bear cub',
+      'a little mouse', 'a sleepy hedgehog', 'a tiny turtle', 'a baby otter',
+      'a shy deer', 'a small dragon', 'a kind badger', 'a wandering duckling',
+    ];
+
+    const THEMES_LIST = [
+      'a quiet forest', 'a cozy cottage', 'a starry meadow', 'a gentle river',
+      'a snug treehouse', 'a small fishing village', 'a mountain cabin',
+      'a lantern-lit garden', 'a sleepy harbor town', 'a field of fireflies',
+      'a warm library', 'a soft snowy village', 'an island with tide pools',
+      'a windmill by a lake', 'a greenhouse full of night-blooming flowers',
+    ];
+
     const SILLY_LABELS = ['Calm', 'Sweet', 'Playful', 'Goofy', 'Wacky'];
 
-    sillyMeter.addEventListener('input', () => {
-      sillyMeterLabel.textContent = SILLY_LABELS[Number(sillyMeter.value)];
+    // ── Advanced settings state ───────────────────────────────────
+    const ADV_KEY = 'storytime-advanced';
+    const ADV_DEFAULTS = { character: null, theme: null, moral: null, length: 1, silliness: 0 };
+    let adv = { ...ADV_DEFAULTS };
+
+    function loadAdv() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(ADV_KEY));
+        if (saved && typeof saved === 'object') adv = { ...ADV_DEFAULTS, ...saved };
+      } catch {}
+    }
+
+    function saveAdv() {
+      localStorage.setItem(ADV_KEY, JSON.stringify(adv));
+    }
+
+    function isAdvDefault() {
+      return !adv.character && !adv.theme && !adv.moral && adv.length === 1;
+    }
+
+    // ── DOM refs ──────────────────────────────────────────────────
+    const button          = document.getElementById('generate');
+    const status          = document.getElementById('status');
+    const story           = document.getElementById('story');
+    const illustration    = document.getElementById('illustration');
+    const sillyMeter      = document.getElementById('silly-meter');
+    const sillyMeterLabel = document.getElementById('silly-meter-label');
+    const advOpen         = document.getElementById('adv-open');
+    const advOverlay      = document.getElementById('adv-overlay');
+    const advClose        = document.getElementById('adv-close');
+    const advDone         = document.getElementById('adv-done');
+    const advReset        = document.getElementById('adv-reset');
+    const advBadge        = document.getElementById('adv-badge');
+    const advCharacter    = document.getElementById('adv-character');
+    const advTheme        = document.getElementById('adv-theme');
+    const advMoral        = document.getElementById('adv-moral');
+    const advSillyMeter   = document.getElementById('adv-silly-meter');
+    const advSillyLabel   = document.getElementById('adv-silly-label');
+    const lengthBtns      = Array.from(document.querySelectorAll('.length-btn'));
+
+    // ── Populate dropdowns ────────────────────────────────────────
+    CHARACTERS_LIST.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      let label = c.replace(/^an? /, '');
+      opt.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+      advCharacter.appendChild(opt);
     });
 
+    THEMES_LIST.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      let label = t.replace(/^an? /, '');
+      opt.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+      advTheme.appendChild(opt);
+    });
+
+    // ── Badge ─────────────────────────────────────────────────────
+    function updateBadge() {
+      advBadge.hidden = isAdvDefault();
+    }
+
+    // ── Silliness sync ────────────────────────────────────────────
+    function syncSilliness(value) {
+      adv.silliness = value;
+      sillyMeter.value = value;
+      advSillyMeter.value = value;
+      sillyMeterLabel.textContent = SILLY_LABELS[value];
+      advSillyLabel.textContent = SILLY_LABELS[value];
+    }
+
+    sillyMeter.addEventListener('input', () => syncSilliness(Number(sillyMeter.value)));
+    advSillyMeter.addEventListener('input', () => syncSilliness(Number(advSillyMeter.value)));
+
+    // ── Length segmented control ──────────────────────────────────
+    function setLength(index) {
+      adv.length = index;
+      lengthBtns.forEach(btn => {
+        btn.classList.toggle('selected', Number(btn.dataset.length) === index);
+      });
+    }
+
+    lengthBtns.forEach(btn => {
+      btn.addEventListener('click', () => setLength(Number(btn.dataset.length)));
+    });
+
+    // ── Apply adv state to panel controls ─────────────────────────
+    function applyAdvToPanel() {
+      advCharacter.value = adv.character || '';
+      advTheme.value     = adv.theme || '';
+      advMoral.value     = adv.moral || '';
+      setLength(adv.length);
+      syncSilliness(adv.silliness);
+    }
+
+    // ── Collect panel controls into adv state ─────────────────────
+    function collectAdvFromPanel() {
+      adv.character = advCharacter.value || null;
+      adv.theme     = advTheme.value || null;
+      adv.moral     = advMoral.value || null;
+      // length and silliness are kept in sync in real-time
+    }
+
+    // ── Panel open / close ────────────────────────────────────────
+    function openPanel() {
+      applyAdvToPanel();
+      advOverlay.hidden = false;
+      advClose.focus();
+    }
+
+    function closePanel() {
+      collectAdvFromPanel();
+      saveAdv();
+      updateBadge();
+      advOverlay.hidden = true;
+    }
+
+    advOpen.addEventListener('click', openPanel);
+    advClose.addEventListener('click', closePanel);
+    advDone.addEventListener('click', closePanel);
+
+    advOverlay.addEventListener('click', e => {
+      if (e.target === advOverlay) closePanel();
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !advOverlay.hidden) closePanel();
+    });
+
+    // ── Reset ─────────────────────────────────────────────────────
+    advReset.addEventListener('click', () => {
+      adv = { ...ADV_DEFAULTS };
+      applyAdvToPanel();
+      saveAdv();
+      updateBadge();
+    });
+
+    // ── Story generation ──────────────────────────────────────────
     async function generateStory() {
       button.disabled = true;
       status.textContent = 'Generating story...';
@@ -180,7 +552,13 @@
           method: 'POST',
           cache: 'no-store',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ silliness: Number(sillyMeter.value) }),
+          body: JSON.stringify({
+            silliness: adv.silliness,
+            character: adv.character || null,
+            theme: adv.theme || null,
+            moral: adv.moral || null,
+            length: adv.length,
+          }),
         });
 
         if (!response.ok) {
@@ -205,6 +583,11 @@
     }
 
     button.addEventListener('click', generateStory);
+
+    // ── Init ──────────────────────────────────────────────────────
+    loadAdv();
+    syncSilliness(adv.silliness);
+    updateBadge();
     generateStory();
   </script>
 </body>
