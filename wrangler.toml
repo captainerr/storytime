@@ -3,7 +3,8 @@ main = "src/index.js"
 compatibility_date = "2025-07-18"
 
 routes = [
-  { pattern = "lullaby.aistuffforparents.com", custom_domain = true }
+  { pattern = "lullaby.aistuffforparents.com", custom_domain = true },
+  { pattern = "timer.aistuffforparents.com", custom_domain = true }
 ]
 
 [assets]

@@ -336,7 +336,17 @@ async function listStories(env, url) {
 
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
+    const url  = new URL(request.url);
+    const host = request.headers.get('host') || '';
+
+    // timer.aistuffforparents.com → serve timer.html as the root
+    if (host === 'timer.aistuffforparents.com') {
+      if (url.pathname === '/' || url.pathname === '/index.html') {
+        const timerReq = new Request(new URL('/timer.html', url), request);
+        return env.ASSETS.fetch(timerReq);
+      }
+      return env.ASSETS.fetch(request);
+    }
 
     if (url.pathname === '/api/generate-story' && request.method === 'POST') {
       return generateStory(env, request);
