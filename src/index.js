@@ -161,9 +161,15 @@ async function generateStory(env, request) {
   }
 
   // The illustration is best-effort: no prompt means no image, story still renders.
-  const image = imagePrompt ? await generateImage(env, imagePrompt) : null;
+  let image = null;
+  let imageError = null;
+  if (imagePrompt) {
+    const result = await generateImage(env, imagePrompt);
+    image = result.dataUrl;
+    imageError = result.error;
+  }
 
-  return new Response(JSON.stringify({ story, image }), {
+  return new Response(JSON.stringify({ story, image, imageError }), {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': 'no-store',
@@ -174,11 +180,11 @@ async function generateStory(env, request) {
 async function generateImage(env, prompt) {
   try {
     const result = await env.AI.run('@cf/black-forest-labs/flux-1-schnell', { prompt, steps: 4 });
-    if (!result?.image) return null;
-    return `data:image/jpeg;base64,${result.image}`;
+    if (!result?.image) return { dataUrl: null, error: `No image in AI response (keys: ${Object.keys(result ?? {}).join(', ') || 'none'})` };
+    return { dataUrl: `data:image/jpeg;base64,${result.image}`, error: null };
   } catch (err) {
     console.error('Workers AI image generation failed:', err);
-    return null;
+    return { dataUrl: null, error: err.message };
   }
 }
 

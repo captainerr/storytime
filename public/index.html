@@ -649,9 +649,11 @@
         if (data.image) {
           illustration.src = data.image;
           illustration.style.display = 'block';
+        } else if (data.imageError) {
+          status.textContent = `Illustration unavailable: ${data.imageError}`;
         }
 
-        status.textContent = '';
+        if (!data.imageError) status.textContent = '';
       } catch (err) {
         status.textContent = `Something went wrong: ${err.message}`;
       } finally {
