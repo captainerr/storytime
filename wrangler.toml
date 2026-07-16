@@ -8,3 +8,8 @@ binding = "ASSETS"
 
 [ai]
 binding = "AI"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "storytime-library"
+database_id = "PASTE_DATABASE_ID_HERE"

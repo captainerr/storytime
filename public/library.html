@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Library — Storytime</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;1,400&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    var saved = localStorage.getItem('theme');
+    document.documentElement.setAttribute('data-theme', saved === 'light' ? 'light' : 'dark');
+  })();
+</script>
+<style>
+  /* ── CSS variables ─────────────────────────────────── */
+  :root {
+    color-scheme: dark;
+    --bg:           #120d08;
+    --fg:           #f0e2c0;
+    --muted:        #9a7d55;
+    --accent:       #c8922a;
+    --button-bg:    #7a3e12;
+    --button-fg:    #f5e6c8;
+    --toggle-border:#3d2810;
+    --panel-bg:     #1c1509;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg:           #f2e5c8;
+    --fg:           #2d1a08;
+    --muted:        #7a5a32;
+    --accent:       #6b3410;
+    --button-bg:    #4a2810;
+    --button-fg:    #f2e5c8;
+    --toggle-border:#c8a870;
+    --panel-bg:     #ede0be;
+  }
+
+  html {
+    min-height: 100%;
+    background: radial-gradient(ellipse at 50% 25%, #1e1208 0%, #120d08 100%);
+  }
+  html[data-theme="light"] {
+    background: radial-gradient(ellipse at 50% 25%, #faf0d8 0%, #f2e5c8 100%);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    font-family: 'Lora', Georgia, serif;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+    line-height: 1.7;
+    background: transparent;
+    color: var(--fg);
+  }
+
+  /* ── Theme toggle ──────────────────────────────────── */
+  #theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    border: 1px solid var(--toggle-border);
+    background: var(--panel-bg);
+    color: var(--fg);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Header ────────────────────────────────────────── */
+  .back-link {
+    display: inline-block;
+    font-family: 'Lora', serif;
+    font-style: italic;
+    font-size: 0.88rem;
+    color: var(--muted);
+    text-decoration: none;
+    margin-bottom: 1.5rem;
+  }
+  .back-link:hover { color: var(--fg); }
+  h1 {
+    font-family: 'Lora', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.04em;
+  }
+  .title-ornament {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1rem;
+    letter-spacing: 0.5em;
+    margin-bottom: 2rem;
+    user-select: none;
+  }
+
+  /* ── Filters ───────────────────────────────────────── */
+  .filters {
+    background: var(--panel-bg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: flex-end;
+  }
+  .filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 140px;
+    flex: 1;
+  }
+  .filter-label {
+    font-family: 'Lora', serif;
+    font-style: italic;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .filter-select {
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 6px;
+    padding: 0.4rem 0.65rem;
+    font-family: 'Lora', serif;
+    font-size: 0.88rem;
+    width: 100%;
+    cursor: pointer;
+  }
+  .filter-reset {
+    background: none;
+    border: 1px solid var(--toggle-border);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 0.4rem 1rem;
+    font-family: 'Lora', serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+    align-self: flex-end;
+  }
+  .filter-reset:hover { color: var(--fg); }
+
+  /* ── Status ────────────────────────────────────────── */
+  #lib-status {
+    text-align: center;
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--muted);
+    min-height: 2em;
+    margin-bottom: 1rem;
+  }
+
+  /* ── Story card grid ───────────────────────────────── */
+  #card-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  @media (min-width: 600px) {
+    #card-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .story-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 10px;
+    padding: 1.2rem 1.3rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .card-title {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 1.25rem;
+    line-height: 1.3;
+    color: var(--fg);
+    margin: 0;
+  }
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .tag {
+    font-family: 'Lora', serif;
+    font-size: 0.72rem;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+    white-space: nowrap;
+  }
+  .card-preview {
+    font-family: 'EB Garamond', serif;
+    font-size: 1rem;
+    color: var(--muted);
+    line-height: 1.55;
+    margin: 0;
+  }
+  .read-btn {
+    align-self: flex-start;
+    background: none;
+    border: 1px solid var(--toggle-border);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 0.3rem 0.9rem;
+    font-family: 'Lora', serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  .read-btn:hover { color: var(--fg); border-color: var(--fg); }
+  .full-story {
+    font-family: 'EB Garamond', serif;
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--fg);
+    white-space: pre-wrap;
+    border-top: 1px solid var(--toggle-border);
+    padding-top: 0.9rem;
+    margin-top: 0.25rem;
+  }
+  .full-story[hidden] { display: none; }
+
+  /* ── Load more ─────────────────────────────────────── */
+  #load-more-wrap {
+    text-align: center;
+    margin-top: 2rem;
+  }
+  #load-more {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.65rem 1.8rem;
+    border-radius: 999px;
+    border: none;
+    background: var(--button-bg);
+    color: var(--button-fg);
+    cursor: pointer;
+    transition: filter 0.15s;
+  }
+  #load-more:hover { filter: brightness(1.14); }
+  #load-more:disabled { opacity: 0.5; cursor: default; filter: none; }
+  #load-more[hidden] { display: none; }
+</style>
+</head>
+<body>
+  <button id="theme-toggle" aria-label="Toggle light/dark theme"></button>
+  <a href="/" class="back-link">← Back to Storytime</a>
+  <h1>📚 The Library</h1>
+  <div class="title-ornament">❧ &nbsp; ❧ &nbsp; ❧</div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filter-field">
+      <span class="filter-label">Character</span>
+      <select id="f-character" class="filter-select">
+        <option value="">All characters</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <span class="filter-label">Setting</span>
+      <select id="f-theme" class="filter-select">
+        <option value="">All settings</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <span class="filter-label">Moral</span>
+      <select id="f-moral" class="filter-select">
+        <option value="">Any moral</option>
+        <option value="kindness">Kindness</option>
+        <option value="courage">Courage</option>
+        <option value="friendship">Friendship</option>
+        <option value="patience">Patience</option>
+        <option value="sharing">Sharing</option>
+        <option value="honesty">Honesty</option>
+        <option value="perseverance">Perseverance</option>
+        <option value="gratitude">Gratitude</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <span class="filter-label">Silliness</span>
+      <select id="f-silliness" class="filter-select">
+        <option value="">Any</option>
+        <option value="0">Calm</option>
+        <option value="1">Sweet</option>
+        <option value="2">Playful</option>
+        <option value="3">Goofy</option>
+        <option value="4">Wacky</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <span class="filter-label">Length</span>
+      <select id="f-length" class="filter-select">
+        <option value="">Any</option>
+        <option value="0">Short (~2 min)</option>
+        <option value="1">Medium (~4 min)</option>
+        <option value="2">Long (~6 min)</option>
+      </select>
+    </div>
+    <button id="f-reset" class="filter-reset">Reset filters</button>
+  </div>
+
+  <div id="lib-status">Loading stories…</div>
+  <div id="card-grid"></div>
+  <div id="load-more-wrap">
+    <button id="load-more" hidden>Load more stories</button>
+  </div>
+
+  <script>
+    // ── Theme toggle ──────────────────────────────────────────────
+    const themeToggle = document.getElementById('theme-toggle');
+    function currentTheme() {
+      return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    }
+    function renderToggleIcon() {
+      themeToggle.textContent = currentTheme() === 'light' ? '☀️' : '🌙';
+    }
+    themeToggle.addEventListener('click', () => {
+      const next = currentTheme() === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      renderToggleIcon();
+    });
+    renderToggleIcon();
+
+    // ── Data ──────────────────────────────────────────────────────
+    const CHARACTERS_LIST = [
+      'a small fox', 'a curious rabbit', 'a young owl', 'a gentle bear cub',
+      'a little mouse', 'a sleepy hedgehog', 'a tiny turtle', 'a baby otter',
+      'a shy deer', 'a small dragon', 'a kind badger', 'a wandering duckling',
+    ];
+    const THEMES_LIST = [
+      'a quiet forest', 'a cozy cottage', 'a starry meadow', 'a gentle river',
+      'a snug treehouse', 'a small fishing village', 'a mountain cabin',
+      'a lantern-lit garden', 'a sleepy harbor town', 'a field of fireflies',
+      'a warm library', 'a soft snowy village', 'an island with tide pools',
+      'a windmill by a lake', 'a greenhouse full of night-blooming flowers',
+    ];
+    const SILLY_LABELS  = ['Calm', 'Sweet', 'Playful', 'Goofy', 'Wacky'];
+    const LENGTH_LABELS = ['Short', 'Medium', 'Long'];
+
+    // ── Populate filter dropdowns ─────────────────────────────────
+    const fCharacter = document.getElementById('f-character');
+    const fTheme     = document.getElementById('f-theme');
+    CHARACTERS_LIST.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      let label = c.replace(/^an? /, '');
+      opt.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+      fCharacter.appendChild(opt);
+    });
+    THEMES_LIST.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      let label = t.replace(/^an? /, '');
+      opt.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+      fTheme.appendChild(opt);
+    });
+
+    // ── Library state ─────────────────────────────────────────────
+    const cardGrid   = document.getElementById('card-grid');
+    const libStatus  = document.getElementById('lib-status');
+    const loadMore   = document.getElementById('load-more');
+    const fMoral     = document.getElementById('f-moral');
+    const fSilliness = document.getElementById('f-silliness');
+    const fLength    = document.getElementById('f-length');
+    const fReset     = document.getElementById('f-reset');
+
+    const PAGE_SIZE = 20;
+    let offset = 0;
+    let total  = 0;
+    let loading = false;
+
+    function activeFilters() {
+      const p = new URLSearchParams();
+      if (fCharacter.value) p.set('character', fCharacter.value);
+      if (fTheme.value)     p.set('theme', fTheme.value);
+      if (fMoral.value)     p.set('moral', fMoral.value);
+      if (fSilliness.value !== '') p.set('silliness', fSilliness.value);
+      if (fLength.value !== '')    p.set('length', fLength.value);
+      return p;
+    }
+
+    function labelFor(story) {
+      const labels = [];
+      if (story.character) {
+        let c = story.character.replace(/^an? /, '');
+        labels.push(c.charAt(0).toUpperCase() + c.slice(1));
+      }
+      if (story.theme) {
+        let t = story.theme.replace(/^an? /, '');
+        labels.push(t.charAt(0).toUpperCase() + t.slice(1));
+      }
+      labels.push(SILLY_LABELS[story.silliness] || 'Calm');
+      if (story.moral) labels.push(story.moral.charAt(0).toUpperCase() + story.moral.slice(1));
+      labels.push(LENGTH_LABELS[story.length] ?? 'Medium');
+      return labels;
+    }
+
+    function renderCard(s) {
+      const card = document.createElement('div');
+      card.className = 'story-card';
+
+      const titleEl = document.createElement('p');
+      titleEl.className = 'card-title';
+      titleEl.textContent = s.title;
+
+      const tags = document.createElement('div');
+      tags.className = 'card-tags';
+      labelFor(s).forEach(label => {
+        const chip = document.createElement('span');
+        chip.className = 'tag';
+        chip.textContent = label;
+        tags.appendChild(chip);
+      });
+
+      const preview = document.createElement('p');
+      preview.className = 'card-preview';
+      const previewText = s.story.replace(/\s+/g, ' ').trim();
+      preview.textContent = previewText.length > 180
+        ? previewText.slice(0, 180).replace(/\s\S+$/, '') + '…'
+        : previewText;
+
+      const btn = document.createElement('button');
+      btn.className = 'read-btn';
+      btn.textContent = 'Read story';
+
+      const full = document.createElement('div');
+      full.className = 'full-story';
+      full.hidden = true;
+      full.textContent = s.story;
+
+      btn.addEventListener('click', () => {
+        const isOpen = !full.hidden;
+        full.hidden = isOpen;
+        btn.textContent = isOpen ? 'Read story' : 'Hide story';
+      });
+
+      card.append(titleEl, tags, preview, btn, full);
+      return card;
+    }
+
+    async function loadStories(reset = false) {
+      if (loading) return;
+      loading = true;
+      if (reset) {
+        offset = 0;
+        cardGrid.innerHTML = '';
+        loadMore.hidden = true;
+      }
+
+      libStatus.textContent = 'Loading stories…';
+
+      const params = activeFilters();
+      params.set('limit', PAGE_SIZE);
+      params.set('offset', offset);
+
+      try {
+        const res = await fetch(`/api/stories?${params}`);
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        const data = await res.json();
+
+        total = data.total;
+        const stories = data.stories || [];
+
+        if (reset && stories.length === 0) {
+          libStatus.textContent = 'No stories saved yet — be the first!';
+          loadMore.hidden = true;
+          loading = false;
+          return;
+        }
+
+        libStatus.textContent = '';
+        stories.forEach(s => cardGrid.appendChild(renderCard(s)));
+        offset += stories.length;
+        loadMore.hidden = offset >= total;
+      } catch (err) {
+        libStatus.textContent = `Couldn't load stories: ${err.message}`;
+      } finally {
+        loading = false;
+      }
+    }
+
+    loadMore.addEventListener('click', () => loadStories(false));
+
+    // ── Filter debounce ───────────────────────────────────────────
+    let filterTimer = null;
+    function onFilterChange() {
+      clearTimeout(filterTimer);
+      filterTimer = setTimeout(() => loadStories(true), 300);
+    }
+    [fCharacter, fTheme, fMoral, fSilliness, fLength].forEach(el =>
+      el.addEventListener('change', onFilterChange)
+    );
+
+    fReset.addEventListener('click', () => {
+      fCharacter.value = '';
+      fTheme.value     = '';
+      fMoral.value     = '';
+      fSilliness.value = '';
+      fLength.value    = '';
+      loadStories(true);
+    });
+
+    // ── Init ──────────────────────────────────────────────────────
+    loadStories(true);
+  </script>
+</body>
+</html>

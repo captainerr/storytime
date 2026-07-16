@@ -248,6 +248,50 @@
     50%      { opacity: 0.25; }
   }
 
+  /* ── Save prompt ───────────────────────────────────── */
+  #save-prompt {
+    margin-top: 2.5rem;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  #save-prompt.visible {
+    opacity: 1;
+  }
+  .save-prompt-text {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 1.15rem;
+    color: var(--muted);
+    margin: 0 0 0.75rem;
+  }
+  .save-btn {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 0.6rem 1.6rem;
+    border-radius: 999px;
+    border: none;
+    background: var(--button-bg);
+    color: var(--button-fg);
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    transition: filter 0.15s;
+    display: block;
+    margin: 0 auto 0.75rem;
+  }
+  .save-btn:hover:not(:disabled) { filter: brightness(1.14); }
+  .save-btn:disabled { opacity: 0.6; cursor: default; filter: none; }
+  .library-link {
+    display: block;
+    font-family: 'Lora', serif;
+    font-style: italic;
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .library-link:hover { color: var(--fg); }
+
   /* ── Illustration ──────────────────────────────────── */
   #illustration {
     display: none;
@@ -480,6 +524,11 @@
   <div id="story-title"></div>
   <div id="story"></div>
   <img id="illustration" alt="Illustration for tonight's story">
+  <div id="save-prompt" hidden>
+    <p class="save-prompt-text">Love this story?</p>
+    <button id="save-btn" class="save-btn">Add it to our library</button>
+    <a href="/library" class="library-link">Browse the library →</a>
+  </div>
 
   <script>
     // ── Theme toggle ──────────────────────────────────────────────
@@ -545,6 +594,8 @@
     const storyTitle      = document.getElementById('story-title');
     const story           = document.getElementById('story');
     const illustration    = document.getElementById('illustration');
+    const savePrompt      = document.getElementById('save-prompt');
+    const saveBtn         = document.getElementById('save-btn');
     const sillyMeter      = document.getElementById('silly-meter');
     const sillyMeterLabel = document.getElementById('silly-meter-label');
     const advOpen         = document.getElementById('adv-open');
@@ -668,7 +719,7 @@
       animRunning = false;
     }
 
-    function animateStory(fullText) {
+    function animateStory(fullText, onComplete) {
       cancelAnim();
 
       const first = fullText.charAt(0);
@@ -701,6 +752,7 @@
         animRunning = false;
         animCancel  = null;
         if (skipCtrl) { skipCtrl.abort(); skipCtrl = null; }
+        if (onComplete) onComplete();
       }
 
       animCancel = () => { cancelled = true; finish(); };
@@ -728,6 +780,36 @@
       }, 550);
     }
 
+    // ── Save to library ───────────────────────────────────────────
+    let currentStoryData = null;
+
+    function showSavePrompt() {
+      savePrompt.hidden = false;
+      // Trigger fade-in on next frame
+      requestAnimationFrame(() => savePrompt.classList.add('visible'));
+    }
+
+    saveBtn.addEventListener('click', async () => {
+      if (!currentStoryData) return;
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+      try {
+        const res = await fetch('/api/save-story', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentStoryData),
+        });
+        if (!res.ok) {
+          const msg = await res.text();
+          throw new Error(msg || `Status ${res.status}`);
+        }
+        saveBtn.textContent = 'Added to the library ✓';
+      } catch (err) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = `Save failed: ${err.message}`;
+      }
+    });
+
     // ── Story generation ──────────────────────────────────────────
     async function generateStory() {
       cancelAnim();
@@ -738,6 +820,11 @@
       story.innerHTML = '';
       illustration.removeAttribute('src');
       illustration.style.display = 'none';
+      currentStoryData = null;
+      savePrompt.hidden = true;
+      savePrompt.classList.remove('visible');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Add it to our library';
 
       try {
         const response = await fetch('/api/generate-story', {
@@ -761,7 +848,16 @@
         const data = await response.json();
         storyTitle.textContent = data.title || '';
         setTimeout(() => storyTitle.classList.add('visible'), 80);
-        animateStory(data.story);
+        currentStoryData = {
+          title: data.title || '',
+          story: data.story,
+          silliness: adv.silliness,
+          character: adv.character || null,
+          theme: adv.theme || null,
+          moral: adv.moral || null,
+          length: adv.length,
+        };
+        animateStory(data.story, showSavePrompt);
         status.textContent = '';
 
         if (data.image) {

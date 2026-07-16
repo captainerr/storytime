@@ -200,12 +200,111 @@ async function generateImage(env, prompt) {
   }
 }
 
+const VALID_MORALS = ['kindness', 'courage', 'friendship', 'patience', 'sharing', 'honesty', 'perseverance', 'gratitude'];
+
+async function saveStory(env, request) {
+  if (!env.DB) return new Response('Database not configured.', { status: 500 });
+
+  let body;
+  try { body = await request.json(); } catch { return new Response('Invalid JSON.', { status: 400 }); }
+
+  const { title, story, silliness, character, theme, moral, length } = body;
+
+  if (!title || typeof title !== 'string' || !title.trim())
+    return new Response('title is required.', { status: 400 });
+  if (!story || typeof story !== 'string' || !story.trim())
+    return new Response('story is required.', { status: 400 });
+  if (title.length > 200) return new Response('title too long.', { status: 400 });
+  if (story.length > 12000) return new Response('story too long.', { status: 400 });
+
+  const sillinessVal = parseInt(silliness, 10);
+  if (!Number.isInteger(sillinessVal) || sillinessVal < 0 || sillinessVal > 4)
+    return new Response('invalid silliness.', { status: 400 });
+
+  const lengthVal = parseInt(length, 10);
+  if (![0, 1, 2].includes(lengthVal))
+    return new Response('invalid length.', { status: 400 });
+
+  const charVal  = (character && CHARACTERS.includes(character)) ? character : null;
+  const themeVal = (theme && THEMES.includes(theme)) ? theme : null;
+  const moralVal = (moral && VALID_MORALS.includes(moral)) ? moral : null;
+
+  const id = crypto.randomUUID();
+  try {
+    await env.DB.prepare(
+      'INSERT INTO stories (id, title, story, silliness, character, theme, moral, length, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(id, title.trim(), story.trim(), sillinessVal, charVal, themeVal, moralVal, lengthVal, Date.now()).run();
+  } catch (err) {
+    return new Response(`Database error: ${err.message}`, { status: 500 });
+  }
+
+  return new Response(JSON.stringify({ id }), {
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+  });
+}
+
+async function listStories(env, url) {
+  if (!env.DB) return new Response('Database not configured.', { status: 500 });
+
+  const params = url.searchParams;
+  const offset = Math.max(0, parseInt(params.get('offset') || '0', 10));
+  const limit  = Math.min(50, Math.max(1, parseInt(params.get('limit') || '20', 10)));
+
+  const conditions = [];
+  const bindings   = [];
+
+  const character = params.get('character');
+  if (character && CHARACTERS.includes(character)) { conditions.push('character = ?'); bindings.push(character); }
+
+  const theme = params.get('theme');
+  if (theme && THEMES.includes(theme)) { conditions.push('theme = ?'); bindings.push(theme); }
+
+  const moral = params.get('moral');
+  if (moral && VALID_MORALS.includes(moral)) { conditions.push('moral = ?'); bindings.push(moral); }
+
+  const silliness = params.get('silliness');
+  if (silliness !== null && silliness !== '') {
+    const s = parseInt(silliness, 10);
+    if (Number.isInteger(s) && s >= 0 && s <= 4) { conditions.push('silliness = ?'); bindings.push(s); }
+  }
+
+  const lengthParam = params.get('length');
+  if (lengthParam !== null && lengthParam !== '') {
+    const l = parseInt(lengthParam, 10);
+    if ([0, 1, 2].includes(l)) { conditions.push('length = ?'); bindings.push(l); }
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  try {
+    const countRow = await env.DB.prepare(`SELECT COUNT(*) as total FROM stories ${where}`)
+      .bind(...bindings).first();
+    const total = countRow?.total ?? 0;
+
+    const rows = await env.DB.prepare(
+      `SELECT id, title, story, silliness, character, theme, moral, length, created_at FROM stories ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+    ).bind(...bindings, limit, offset).all();
+
+    return new Response(JSON.stringify({ stories: rows.results, total }), {
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    });
+  } catch (err) {
+    return new Response(`Database error: ${err.message}`, { status: 500 });
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
     if (url.pathname === '/api/generate-story' && request.method === 'POST') {
       return generateStory(env, request);
+    }
+    if (url.pathname === '/api/save-story' && request.method === 'POST') {
+      return saveStory(env, request);
+    }
+    if (url.pathname === '/api/stories' && request.method === 'GET') {
+      return listStories(env, url);
     }
 
     return env.ASSETS.fetch(request);
