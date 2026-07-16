@@ -343,12 +343,11 @@ export default {
       const assetPath = (url.pathname === '/' || url.pathname === '/index.html')
         ? '/timer.html'
         : url.pathname;
-      return env.ASSETS.fetch(
-        new Request(`https://lullaby.aistuffforparents.com${assetPath}`, {
-          method: request.method,
-          headers: request.headers,
-        })
-      );
+      url.pathname = assetPath;
+      return env.ASSETS.fetch(new Request(url.toString(), {
+        method: request.method,
+        headers: request.headers,
+      }));
     }
 
     if (url.pathname === '/api/generate-story' && request.method === 'POST') {
