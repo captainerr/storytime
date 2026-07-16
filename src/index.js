@@ -70,14 +70,9 @@ function resolveSilliness(rawValue) {
   return index;
 }
 
+const CF_TEXT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+
 async function generateStory(env, request) {
-  if (!env.GROQ_API_KEY) {
-    return new Response('Server is missing GROQ_API_KEY configuration.', { status: 500 });
-  }
-
-  const model = env.GROQ_MODEL || 'llama-3.3-70b-versatile';
-  const seed = Math.floor(Math.random() * 2 ** 31);
-
   const body = await request.json().catch(() => ({}));
   const silliness = resolveSilliness(body.silliness);
   const storyGuidance = SILLINESS_TIERS[silliness].guidance;
@@ -102,43 +97,22 @@ async function generateStory(env, request) {
   if (LENGTH_OVERRIDES[lengthIndex]) userMessage += ` ${LENGTH_OVERRIDES[lengthIndex]}`;
   if (moral) userMessage += ` Weave in a gentle moral about ${moral}.`;
 
-  let groqResponse;
+  let aiResult;
   try {
-    groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 1,
-        seed,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: userMessage },
-        ],
-      }),
+    aiResult = await env.AI.run(CF_TEXT_MODEL, {
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userMessage },
+      ],
+      max_tokens: 2048,
     });
   } catch (err) {
-    return new Response(`Failed to reach Groq: ${err.message}`, { status: 500 });
+    return new Response(`Workers AI error: ${err.message}`, { status: 500 });
   }
 
-  if (!groqResponse.ok) {
-    const errorBody = (await groqResponse.text()).slice(0, 300);
-    return new Response(`Groq API error (${groqResponse.status}): ${errorBody}`, { status: 502 });
-  }
-
-  let data;
-  try {
-    data = await groqResponse.json();
-  } catch (err) {
-    return new Response(`Failed to parse Groq response: ${err.message}`, { status: 500 });
-  }
-
-  const rawContent = data?.choices?.[0]?.message?.content;
+  const rawContent = aiResult?.response;
   if (!rawContent) {
-    return new Response('Groq response did not contain a message.', { status: 502 });
+    return new Response('Workers AI did not return a response.', { status: 502 });
   }
 
   // Split title from story body on ===STORY===
@@ -169,7 +143,7 @@ async function generateStory(env, request) {
   }
 
   if (!story) {
-    return new Response('Groq response did not contain a story.', { status: 502 });
+    return new Response('Workers AI response did not contain a story.', { status: 502 });
   }
 
   // The illustration is best-effort: no prompt means no image, story still renders.
@@ -203,8 +177,6 @@ async function generateImage(env, prompt) {
 const ILLUST_PROMPT = `You are an illustration prompt writer for children's picture books. Given a bedtime story, write a single concise illustration prompt (1-2 sentences) describing one gentle, cozy scene from it. Style: soft, warm children's picture-book illustration, gentle colors, cozy lighting. No scary or violent imagery. Absolutely no text, letters, words, or numbers in the image — describe only visual scenery and characters.`;
 
 async function generateIllustration(env, request) {
-  if (!env.GROQ_API_KEY) return new Response('Server is missing GROQ_API_KEY.', { status: 500 });
-
   let body;
   try { body = await request.json(); } catch { return new Response('Invalid JSON.', { status: 400 }); }
 
@@ -212,34 +184,21 @@ async function generateIllustration(env, request) {
   if (!story || typeof story !== 'string' || !story.trim())
     return new Response('story is required.', { status: 400 });
 
-  const model = env.GROQ_MODEL || 'llama-3.3-70b-versatile';
-
-  let groqResponse;
+  let aiResult;
   try {
-    groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.GROQ_API_KEY}` },
-      body: JSON.stringify({
-        model,
-        temperature: 1,
-        messages: [
-          { role: 'system', content: ILLUST_PROMPT },
-          { role: 'user', content: story.slice(0, 4000) },
-        ],
-      }),
+    aiResult = await env.AI.run(CF_TEXT_MODEL, {
+      messages: [
+        { role: 'system', content: ILLUST_PROMPT },
+        { role: 'user', content: story.slice(0, 4000) },
+      ],
+      max_tokens: 256,
     });
   } catch (err) {
-    return new Response(`Failed to reach Groq: ${err.message}`, { status: 500 });
+    return new Response(`Workers AI error: ${err.message}`, { status: 500 });
   }
 
-  if (!groqResponse.ok) {
-    const errorBody = (await groqResponse.text()).slice(0, 300);
-    return new Response(`Groq API error (${groqResponse.status}): ${errorBody}`, { status: 502 });
-  }
-
-  const data = await groqResponse.json().catch(() => null);
-  const imagePrompt = data?.choices?.[0]?.message?.content?.trim();
-  if (!imagePrompt) return new Response('No illustration prompt from Groq.', { status: 502 });
+  const imagePrompt = aiResult?.response?.trim();
+  if (!imagePrompt) return new Response('No illustration prompt from Workers AI.', { status: 502 });
 
   const { dataUrl, error } = await generateImage(env, imagePrompt);
   return new Response(JSON.stringify({ image: dataUrl, imageError: error }), {
