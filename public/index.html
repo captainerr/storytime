@@ -4,41 +4,63 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Storytime</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
 <script>
-  // Runs before CSS paints, so the page never flashes the wrong theme.
+  // Runs before CSS paints so the page never flashes the wrong theme.
   (function () {
     var saved = localStorage.getItem('theme');
     document.documentElement.setAttribute('data-theme', saved === 'light' ? 'light' : 'dark');
   })();
 </script>
 <style>
+  /* ── CSS variables ─────────────────────────────────── */
   :root {
     color-scheme: dark;
-    --bg: #14121f;
-    --fg: #eee9f7;
-    --muted: #b3a9cc;
-    --button-bg: #6c56c9;
-    --button-fg: #ffffff;
-    --toggle-border: #4b3f72;
+    --bg:           #120d08;
+    --fg:           #f0e2c0;
+    --muted:        #9a7d55;
+    --accent:       #c8922a;
+    --button-bg:    #7a3e12;
+    --button-fg:    #f5e6c8;
+    --toggle-border:#3d2810;
+    --panel-bg:     #1c1509;
   }
   :root[data-theme="light"] {
     color-scheme: light;
-    --bg: #faf8ff;
-    --fg: #221c33;
-    --muted: #5c5470;
-    --button-bg: #4b3f72;
-    --button-fg: #ffffff;
-    --toggle-border: #d8d0ef;
+    --bg:           #f2e5c8;
+    --fg:           #2d1a08;
+    --muted:        #7a5a32;
+    --accent:       #6b3410;
+    --button-bg:    #4a2810;
+    --button-fg:    #f2e5c8;
+    --toggle-border:#c8a870;
+    --panel-bg:     #ede0be;
   }
+
+  /* ── Full-viewport background ──────────────────────── */
+  html {
+    min-height: 100%;
+    background: radial-gradient(ellipse at 50% 25%, #1e1208 0%, #120d08 100%);
+  }
+  html[data-theme="light"] {
+    background: radial-gradient(ellipse at 50% 25%, #faf0d8 0%, #f2e5c8 100%);
+  }
+
+  /* ── Base ──────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; }
   body {
-    font-family: Georgia, 'Times New Roman', serif;
-    max-width: 640px;
+    font-family: 'Lora', Georgia, serif;
+    max-width: 680px;
     margin: 0 auto;
-    padding: 3rem 1.5rem 4rem;
-    line-height: 1.6;
-    background: var(--bg);
+    padding: 3rem 1.5rem 5rem;
+    line-height: 1.7;
+    background: transparent;
     color: var(--fg);
   }
+
+  /* ── Theme toggle ──────────────────────────────────── */
   #theme-toggle {
     position: fixed;
     top: 1rem;
@@ -47,7 +69,7 @@
     height: 2.75rem;
     border-radius: 50%;
     border: 1px solid var(--toggle-border);
-    background: var(--bg);
+    background: var(--panel-bg);
     color: var(--fg);
     font-size: 1.2rem;
     cursor: pointer;
@@ -55,11 +77,26 @@
     align-items: center;
     justify-content: center;
   }
+
+  /* ── Title ─────────────────────────────────────────── */
   h1 {
-    font-size: 1.5rem;
+    font-family: 'Lora', serif;
+    font-size: 2rem;
+    font-weight: 600;
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.04em;
   }
+  .title-ornament {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1rem;
+    letter-spacing: 0.5em;
+    margin-bottom: 2rem;
+    user-select: none;
+  }
+
+  /* ── Controls ──────────────────────────────────────── */
   .controls {
     display: flex;
     align-items: center;
@@ -68,17 +105,27 @@
     margin-bottom: 1rem;
   }
   button#generate {
-    font-size: 1.1rem;
-    padding: 0.75rem 1.75rem;
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    padding: 0.7rem 1.9rem;
     border-radius: 999px;
     border: none;
     background: var(--button-bg);
     color: var(--button-fg);
     cursor: pointer;
+    letter-spacing: 0.03em;
+    transition: filter 0.15s;
   }
+  :root:not([data-theme="light"]) button#generate {
+    box-shadow: 0 0 16px 3px rgba(200, 146, 42, 0.15);
+  }
+  button#generate:hover { filter: brightness(1.14); }
   button#generate:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: default;
+    filter: none;
+    box-shadow: none;
   }
   .silly-meter-wrap {
     display: flex;
@@ -87,7 +134,9 @@
     gap: 0.4rem;
   }
   #silly-meter-label {
-    font-size: 0.75rem;
+    font-family: 'Lora', serif;
+    font-style: italic;
+    font-size: 0.78rem;
     color: var(--muted);
     white-space: nowrap;
   }
@@ -98,11 +147,11 @@
     direction: rtl;
     width: 1.5rem;
     height: 6rem;
-    accent-color: var(--button-bg);
-    background: var(--toggle-border);
+    accent-color: var(--accent);
     cursor: pointer;
   }
-  /* Advanced link */
+
+  /* ── Advanced link ─────────────────────────────────── */
   .adv-link-wrap {
     text-align: center;
     margin-bottom: 2rem;
@@ -111,10 +160,11 @@
     background: none;
     border: none;
     color: var(--muted);
+    font-family: 'Lora', serif;
+    font-style: italic;
     font-size: 0.85rem;
     cursor: pointer;
     padding: 0.25rem 0.5rem;
-    font-family: inherit;
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
@@ -122,17 +172,60 @@
   #adv-open:hover { color: var(--fg); }
   .adv-badge {
     display: inline-block;
-    width: 7px;
-    height: 7px;
-    background: var(--button-bg);
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
     border-radius: 50%;
     flex-shrink: 0;
   }
-  /* Overlay */
+
+  /* ── Status ────────────────────────────────────────── */
+  #status {
+    text-align: center;
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--muted);
+    min-height: 1.6em;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── Story ─────────────────────────────────────────── */
+  #story {
+    font-family: 'EB Garamond', serif;
+    font-size: 1.2rem;
+    line-height: 1.85;
+    letter-spacing: 0.01em;
+    white-space: pre-wrap;
+  }
+  /* The iconic storybook drop cap */
+  #story::first-letter {
+    font-family: 'UnifrakturMaguntia', cursive;
+    font-size: 5.2em;
+    float: left;
+    line-height: 0.72;
+    padding-right: 0.06em;
+    padding-top: 0.06em;
+    color: var(--accent);
+  }
+
+  /* ── Illustration ──────────────────────────────────── */
+  #illustration {
+    display: none;
+    max-width: 100%;
+    margin-top: 2.5rem;
+    border-radius: 3px;
+    padding: 0.65rem;
+    background: var(--panel-bg);
+    border: 1px solid var(--toggle-border);
+    box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--toggle-border);
+  }
+
+  /* ── Advanced overlay ──────────────────────────────── */
   .adv-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.55);
+    background: rgba(0, 0, 0, 0.62);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -140,11 +233,12 @@
     padding: 1rem;
   }
   .adv-overlay[hidden] { display: none; }
-  /* Panel card */
+
+  /* ── Advanced panel ────────────────────────────────── */
   .adv-panel {
-    background: var(--bg);
+    background: var(--panel-bg);
     border: 1px solid var(--toggle-border);
-    border-radius: 16px;
+    border-radius: 12px;
     width: 100%;
     max-width: 400px;
     max-height: 90vh;
@@ -160,8 +254,9 @@
     justify-content: space-between;
   }
   .adv-panel-title {
-    font-size: 1.1rem;
-    font-weight: bold;
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 1.05rem;
   }
   .adv-close {
     background: none;
@@ -180,24 +275,22 @@
     gap: 0.4rem;
   }
   .adv-label {
-    font-size: 0.75rem;
+    font-family: 'Lora', serif;
+    font-style: italic;
+    font-size: 0.8rem;
     color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-family: Georgia, 'Times New Roman', serif;
   }
   .adv-select {
     background: var(--bg);
     color: var(--fg);
     border: 1px solid var(--toggle-border);
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 0.5rem 0.75rem;
-    font-size: 1rem;
-    font-family: inherit;
+    font-family: 'Lora', serif;
+    font-size: 0.95rem;
     width: 100%;
     cursor: pointer;
   }
-  /* Length segmented control */
   .length-options {
     display: flex;
     gap: 0.5rem;
@@ -207,10 +300,10 @@
     background: var(--bg);
     color: var(--muted);
     border: 1px solid var(--toggle-border);
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 0.5rem 0.25rem;
+    font-family: 'Lora', serif;
     font-size: 0.85rem;
-    font-family: inherit;
     cursor: pointer;
     text-align: center;
     line-height: 1.4;
@@ -220,7 +313,6 @@
     color: var(--button-fg);
     border-color: var(--button-bg);
   }
-  /* Panel silliness slider */
   .adv-silly-wrap {
     display: flex;
     align-items: center;
@@ -228,15 +320,16 @@
   }
   #adv-silly-meter {
     flex: 1;
-    accent-color: var(--button-bg);
+    accent-color: var(--accent);
     cursor: pointer;
   }
   #adv-silly-label {
+    font-family: 'Lora', serif;
+    font-style: italic;
     font-size: 0.9rem;
     color: var(--fg);
     min-width: 4.5rem;
   }
-  /* Panel footer */
   .adv-panel-footer {
     display: flex;
     gap: 0.75rem;
@@ -250,8 +343,8 @@
     color: var(--muted);
     border-radius: 999px;
     padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-    font-family: inherit;
+    font-family: 'Lora', serif;
+    font-size: 0.88rem;
     cursor: pointer;
   }
   #adv-reset:hover { color: var(--fg); }
@@ -261,33 +354,17 @@
     border: none;
     border-radius: 999px;
     padding: 0.5rem 1.25rem;
-    font-size: 0.9rem;
-    font-family: inherit;
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 0.88rem;
     cursor: pointer;
-  }
-  #status {
-    text-align: center;
-    font-style: italic;
-    color: var(--muted);
-    min-height: 1.5em;
-    margin-bottom: 1rem;
-  }
-  #story {
-    white-space: pre-wrap;
-    font-size: 1.1rem;
-  }
-  #illustration {
-    display: none;
-    max-width: 100%;
-    margin-top: 1.5rem;
-    border-radius: 12px;
-    border: 1px solid var(--toggle-border);
   }
 </style>
 </head>
 <body>
   <button id="theme-toggle" aria-label="Toggle light/dark theme"></button>
   <h1>🌙 Storytime</h1>
+  <div class="title-ornament">❧ &nbsp; ❧ &nbsp; ❧</div>
   <div class="controls">
     <button id="generate">Generate Story</button>
     <div class="silly-meter-wrap">
@@ -542,7 +619,7 @@
     // ── Story generation ──────────────────────────────────────────
     async function generateStory() {
       button.disabled = true;
-      status.textContent = 'Generating story...';
+      status.textContent = 'Writing your story…';
       story.textContent = '';
       illustration.removeAttribute('src');
       illustration.style.display = 'none';
