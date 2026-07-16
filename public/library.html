@@ -6,7 +6,7 @@
 <title>The Library — Storytime</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;1,400&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
 <script>
   (function () {
     var saved = localStorage.getItem('theme');
@@ -235,6 +235,22 @@
     margin-top: 0.25rem;
   }
   .full-story[hidden] { display: none; }
+  .full-story .drop-cap {
+    font-family: 'UnifrakturMaguntia', cursive;
+    font-size: 5.2em;
+    float: left;
+    line-height: 0.72;
+    padding-right: 0.06em;
+    padding-top: 0.06em;
+    color: var(--accent);
+    animation: dropCapReveal 1.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes dropCapReveal {
+    0%   { opacity: 0; filter: blur(20px) brightness(3);   text-shadow: 0 0 50px var(--accent), 0 0 25px var(--accent); }
+    20%  { opacity: 0.7; filter: blur(7px) brightness(1.6); text-shadow: 0 0 20px var(--accent); }
+    60%  { opacity: 1; filter: blur(1.5px) brightness(1.1); text-shadow: 0 0 8px var(--accent); }
+    100% { opacity: 1; filter: blur(0px) brightness(1);    text-shadow: 0 0 3px rgba(200,146,42,0.15); }
+  }
   .card-footer {
     display: flex;
     align-items: center;
@@ -472,7 +488,6 @@
       const full = document.createElement('div');
       full.className = 'full-story';
       full.hidden = true;
-      full.textContent = s.story;
 
       const illustBtn = document.createElement('button');
       illustBtn.className = 'illust-btn';
@@ -485,6 +500,14 @@
 
       btn.addEventListener('click', () => {
         const isOpen = !full.hidden;
+        if (!isOpen && full.childNodes.length === 0) {
+          const cap = document.createElement('span');
+          cap.className = 'drop-cap';
+          cap.textContent = s.story.charAt(0);
+          const body = document.createElement('span');
+          body.textContent = s.story.slice(1);
+          full.append(cap, body);
+        }
         full.hidden = isOpen;
         btn.textContent = isOpen ? 'Read story' : 'Hide story';
         illustBtn.hidden = isOpen;
