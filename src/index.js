@@ -200,6 +200,53 @@ async function generateImage(env, prompt) {
   }
 }
 
+const ILLUST_PROMPT = `You are an illustration prompt writer for children's picture books. Given a bedtime story, write a single concise illustration prompt (1-2 sentences) describing one gentle, cozy scene from it. Style: soft, warm children's picture-book illustration, gentle colors, cozy lighting. No scary or violent imagery. Absolutely no text, letters, words, or numbers in the image — describe only visual scenery and characters.`;
+
+async function generateIllustration(env, request) {
+  if (!env.GROQ_API_KEY) return new Response('Server is missing GROQ_API_KEY.', { status: 500 });
+
+  let body;
+  try { body = await request.json(); } catch { return new Response('Invalid JSON.', { status: 400 }); }
+
+  const { story } = body;
+  if (!story || typeof story !== 'string' || !story.trim())
+    return new Response('story is required.', { status: 400 });
+
+  const model = env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+
+  let groqResponse;
+  try {
+    groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.GROQ_API_KEY}` },
+      body: JSON.stringify({
+        model,
+        temperature: 1,
+        messages: [
+          { role: 'system', content: ILLUST_PROMPT },
+          { role: 'user', content: story.slice(0, 4000) },
+        ],
+      }),
+    });
+  } catch (err) {
+    return new Response(`Failed to reach Groq: ${err.message}`, { status: 500 });
+  }
+
+  if (!groqResponse.ok) {
+    const errorBody = (await groqResponse.text()).slice(0, 300);
+    return new Response(`Groq API error (${groqResponse.status}): ${errorBody}`, { status: 502 });
+  }
+
+  const data = await groqResponse.json().catch(() => null);
+  const imagePrompt = data?.choices?.[0]?.message?.content?.trim();
+  if (!imagePrompt) return new Response('No illustration prompt from Groq.', { status: 502 });
+
+  const { dataUrl, error } = await generateImage(env, imagePrompt);
+  return new Response(JSON.stringify({ image: dataUrl, imageError: error }), {
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+  });
+}
+
 const VALID_MORALS = ['kindness', 'courage', 'friendship', 'patience', 'sharing', 'honesty', 'perseverance', 'gratitude'];
 
 async function saveStory(env, request) {
@@ -305,6 +352,9 @@ export default {
     }
     if (url.pathname === '/api/stories' && request.method === 'GET') {
       return listStories(env, url);
+    }
+    if (url.pathname === '/api/generate-illustration' && request.method === 'POST') {
+      return generateIllustration(env, request);
     }
 
     return env.ASSETS.fetch(request);

@@ -235,6 +235,35 @@
     margin-top: 0.25rem;
   }
   .full-story[hidden] { display: none; }
+  .card-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .illust-btn {
+    background: none;
+    border: 1px solid var(--toggle-border);
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 0.3rem 0.9rem;
+    font-family: 'Lora', serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  .illust-btn:hover:not(:disabled) { color: var(--fg); border-color: var(--fg); }
+  .illust-btn:disabled { opacity: 0.5; cursor: default; }
+  .card-illustration {
+    display: none;
+    width: 100%;
+    margin-top: 0.5rem;
+    border-radius: 3px;
+    padding: 0.5rem;
+    background: var(--panel-bg);
+    border: 1px solid var(--toggle-border);
+    box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--toggle-border);
+  }
+  .card-illustration.visible { display: block; }
 
   /* ── Load more ─────────────────────────────────────── */
   #load-more-wrap {
@@ -445,13 +474,59 @@
       full.hidden = true;
       full.textContent = s.story;
 
+      const illustBtn = document.createElement('button');
+      illustBtn.className = 'illust-btn';
+      illustBtn.textContent = '🎨 Illustrate';
+      illustBtn.hidden = true;
+
+      const illustImg = document.createElement('img');
+      illustImg.className = 'card-illustration';
+      illustImg.alt = 'Illustration for this story';
+
       btn.addEventListener('click', () => {
         const isOpen = !full.hidden;
         full.hidden = isOpen;
         btn.textContent = isOpen ? 'Read story' : 'Hide story';
+        illustBtn.hidden = isOpen;
+        if (isOpen) {
+          illustImg.classList.remove('visible');
+          illustImg.removeAttribute('src');
+          illustBtn.disabled = false;
+          illustBtn.textContent = '🎨 Illustrate';
+        }
       });
 
-      card.append(titleEl, tags, preview, btn, full);
+      illustBtn.addEventListener('click', async () => {
+        illustBtn.disabled = true;
+        illustBtn.textContent = 'Painting…';
+        illustImg.classList.remove('visible');
+        try {
+          const res = await fetch('/api/generate-illustration', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ story: s.story }),
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          if (data.image) {
+            illustImg.src = data.image;
+            illustImg.classList.add('visible');
+            illustBtn.textContent = '🎨 New illustration';
+            illustBtn.disabled = false;
+          } else {
+            illustBtn.textContent = `Failed: ${data.imageError || 'unknown error'}`;
+          }
+        } catch (err) {
+          illustBtn.disabled = false;
+          illustBtn.textContent = `Failed: ${err.message}`;
+        }
+      });
+
+      const footer = document.createElement('div');
+      footer.className = 'card-footer';
+      footer.append(btn, illustBtn);
+
+      card.append(titleEl, tags, preview, footer, full, illustImg);
       return card;
     }
 
