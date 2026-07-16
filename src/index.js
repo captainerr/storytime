@@ -15,7 +15,15 @@ Rules for the illustration prompt:
 - Absolutely no text, letters, words, numbers, or writing of any kind should appear in the described image — describe only visual scenery/characters.
 - 1-2 sentences, concise.
 
-Format your reply EXACTLY like this and nothing else: first a single title line (an evocative children's book title, no trailing punctuation), then a line containing only ===STORY===, then the full story text, then a line containing only ===ILLUSTRATION===, then the illustration prompt. Do not use JSON, markdown, headings, quotes, or any other labels.`;
+Output format — you MUST follow this exactly. Begin your response with the title on the very first line. Do not add any preamble, greeting, or explanation before or after.
+
+The Starlight Meadow
+===STORY===
+Once upon a time…[story continues]…and soon drifted off to sleep.
+===ILLUSTRATION===
+A soft watercolor scene of a small rabbit curled beneath a glowing lantern in a moonlit meadow, warm golden light, peaceful and dreamy.
+
+Replace the example above with your own original title, story, and illustration prompt. The ===STORY=== and ===ILLUSTRATION=== markers must appear exactly as shown, each on its own line, with no extra characters.`;
 
 const THEMES = [
   'a quiet forest', 'a cozy cottage', 'a starry meadow', 'a gentle river',
@@ -104,7 +112,7 @@ async function generateStory(env, request) {
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userMessage },
       ],
-      max_tokens: 2048,
+      max_tokens: 3072,
     });
   } catch (err) {
     return new Response(`Workers AI error: ${err.message}`, { status: 500 });
@@ -127,6 +135,21 @@ async function generateStory(env, request) {
     storyAndImage = rawContent.slice(storyMatch.index + storyMatch[0].length);
   }
 
+  // Strip markdown formatting from title (model may wrap in **, #, quotes, etc.)
+  if (title) {
+    // If the model added preamble lines, the title is likely the last short line
+    const titleLines = title.split('\n').map(l => l.trim()).filter(Boolean);
+    const shortLines = titleLines.filter(l => l.length <= 120 && !l.endsWith(':'));
+    title = (shortLines.length > 0 ? shortLines[shortLines.length - 1] : titleLines[titleLines.length - 1] || '');
+    title = title
+      .replace(/^#+\s*/, '')              // # heading markers
+      .replace(/^\*\*(.*)\*\*$/, '$1')    // **bold**
+      .replace(/^\*(.*)\*$/, '$1')        // *italic*
+      .replace(/^["'"'](.*?)["'"']$/, '$1') // "quoted"
+      .replace(/^Title:\s*/i, '')         // "Title:" prefix
+      .trim();
+  }
+
   // Tolerant match: the model sometimes splits "===ILLUSTRATION===" across a
   // line break or varies the number of '=' signs. Anchor on the word itself
   // with surrounding '=' and whitespace so any of those variants still splits.
@@ -140,6 +163,18 @@ async function generateStory(env, request) {
   } else {
     story = storyAndImage.slice(0, delimiterMatch.index).trim();
     imagePrompt = storyAndImage.slice(delimiterMatch.index + delimiterMatch[0].length).trim();
+  }
+
+  // Fallback: if title is still empty, pull the first line from the story
+  if (!title && story) {
+    const lines = story.split('\n');
+    const firstLine = lines.find(l => l.trim());
+    if (firstLine) {
+      title = firstLine.trim().replace(/^#+\s*/, '').replace(/^\*\*(.*)\*\*$/, '$1').slice(0, 120);
+      // Remove that line from the story so it doesn't appear twice
+      const idx = lines.indexOf(firstLine);
+      story = lines.slice(idx + 1).join('\n').trim();
+    }
   }
 
   if (!story) {
