@@ -4,6 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Storytime</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-512.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Storytime">
+<meta name="theme-color" content="#1e1005">
+<!-- Open Graph / social sharing -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://lullaby.aistuffforparents.com/">
+<meta property="og:title" content="Storytime">
+<meta property="og:description" content="Gentle bedtime stories, freshly written every night. Tap a button, get a cozy original story with an illustration.">
+<meta property="og:image" content="https://lullaby.aistuffforparents.com/social.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Storytime">
+<meta name="twitter:description" content="Gentle bedtime stories, freshly written every night.">
+<meta name="twitter:image" content="https://lullaby.aistuffforparents.com/social.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
@@ -61,7 +79,7 @@
   }
 
   /* ── Fixed corner buttons ───────────────────────────── */
-  #theme-toggle, #library-link {
+  #theme-toggle, #library-link, #install-btn {
     position: fixed;
     top: 1rem;
     width: 2.75rem;
@@ -79,6 +97,42 @@
   }
   #theme-toggle { right: 1rem; }
   #library-link { right: 4.25rem; }
+  #install-btn  { right: 7.5rem; }
+
+  /* ── iOS install nudge ──────────────────────────────── */
+  #install-nudge {
+    position: fixed;
+    top: 4.4rem;
+    right: 0.75rem;
+    background: var(--panel-bg);
+    border: 1px solid var(--toggle-border);
+    border-radius: 14px;
+    padding: 0.9rem 1.1rem;
+    max-width: 255px;
+    font-family: 'Lora', serif;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--fg);
+    z-index: 200;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+  }
+  #install-nudge::before {
+    content: '';
+    position: absolute;
+    top: -7px;
+    right: 2.5rem;
+    width: 12px;
+    height: 12px;
+    background: var(--panel-bg);
+    border-top: 1px solid var(--toggle-border);
+    border-left: 1px solid var(--toggle-border);
+    transform: rotate(45deg);
+  }
+  #install-nudge .nudge-share {
+    display: inline-block;
+    font-size: 1em;
+    vertical-align: middle;
+  }
 
   /* ── Title ─────────────────────────────────────────── */
   h1 {
@@ -190,6 +244,16 @@
     color: var(--muted);
     min-height: 1.6em;
     margin-bottom: 1.5rem;
+    transition: opacity 0.4s ease;
+  }
+  #status.loading-fade {
+    animation: loadingFade 2.8s ease-in-out infinite;
+  }
+  @keyframes loadingFade {
+    0%   { opacity: 0; }
+    15%  { opacity: 1; }
+    75%  { opacity: 1; }
+    100% { opacity: 0; }
   }
 
   /* ── Story title ───────────────────────────────────── */
@@ -207,6 +271,28 @@
   #story-title.visible {
     opacity: 1;
   }
+
+  /* ── Read aloud ────────────────────────────────────── */
+  #audio-controls {
+    text-align: center;
+    margin-bottom: 1.6rem;
+  }
+  .read-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    padding: 0.4rem 1.1rem;
+    border-radius: 99px;
+    border: 1px solid var(--toggle-border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Lora', serif;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .read-btn:hover { color: var(--fg); border-color: var(--muted); }
+  .read-btn.playing { color: var(--accent); border-color: var(--accent); }
 
   /* ── Story ─────────────────────────────────────────── */
   #story {
@@ -449,6 +535,16 @@
 <body>
   <button id="theme-toggle" aria-label="Toggle light/dark theme"></button>
   <a id="library-link" href="/library" aria-label="Browse the library">📚</a>
+  <button id="install-btn" aria-label="Install app" hidden>
+    <svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="4.5" y="2" width="11" height="16" rx="2"/>
+      <circle cx="10" cy="15.5" r="0.8" fill="currentColor" stroke="none"/>
+      <path d="M10 6v5M7.5 8.5 10 6l2.5 2.5"/>
+    </svg>
+  </button>
+  <div id="install-nudge" hidden role="tooltip">
+    Tap the <span class="nudge-share">⬆</span> <strong>Share</strong> button in Safari's toolbar, then choose <strong>"Add to Home Screen"</strong>
+  </div>
   <h1>🌙 Storytime</h1>
   <div class="title-ornament">❧ &nbsp; ❧ &nbsp; ❧</div>
   <div class="controls">
@@ -525,6 +621,12 @@
 
   <div id="status"></div>
   <div id="story-title"></div>
+  <div id="audio-controls" hidden>
+    <button id="read-btn" class="read-btn" aria-label="Read story aloud">
+      <svg id="read-icon" viewBox="0 0 16 16" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M5 3.5l8 4.5-8 4.5V3.5z"/></svg>
+      <span id="read-label">Read aloud</span>
+    </button>
+  </div>
   <div id="story"></div>
   <img id="illustration" alt="Illustration for tonight's story">
   <div id="save-prompt" hidden>
@@ -595,6 +697,10 @@
     const button          = document.getElementById('generate');
     const status          = document.getElementById('status');
     const storyTitle      = document.getElementById('story-title');
+    const audioControls   = document.getElementById('audio-controls');
+    const readBtn         = document.getElementById('read-btn');
+    const readIcon        = document.getElementById('read-icon');
+    const readLabel       = document.getElementById('read-label');
     const story           = document.getElementById('story');
     const illustration    = document.getElementById('illustration');
     const savePrompt      = document.getElementById('save-prompt');
@@ -783,6 +889,70 @@
       }, 550);
     }
 
+    // ── Read aloud ────────────────────────────────────────────────
+    const PLAY_ICON  = '<path d="M5 3.5l8 4.5-8 4.5V3.5z"/>';
+    const PAUSE_ICON = '<rect x="3" y="2.5" width="3.5" height="11" rx="1"/><rect x="9.5" y="2.5" width="3.5" height="11" rx="1"/>';
+
+    function setReadState(state) {
+      if (state === 'playing') {
+        readIcon.innerHTML = PAUSE_ICON;
+        readLabel.textContent = 'Pause';
+        readBtn.classList.add('playing');
+      } else if (state === 'paused') {
+        readIcon.innerHTML = PLAY_ICON;
+        readLabel.textContent = 'Resume';
+        readBtn.classList.remove('playing');
+      } else {
+        readIcon.innerHTML = PLAY_ICON;
+        readLabel.textContent = 'Read aloud';
+        readBtn.classList.remove('playing');
+      }
+    }
+
+    function stopReading() {
+      speechSynthesis.cancel();
+      setReadState('idle');
+    }
+
+    function getBritishVoice() {
+      const voices = speechSynthesis.getVoices();
+      return voices.find(v => v.name === 'Daniel')                          // iOS British male
+          || voices.find(v => v.name.toLowerCase().includes('british'))
+          || voices.find(v => v.lang === 'en-GB' && /male|man/i.test(v.name))
+          || voices.find(v => v.lang === 'en-GB')
+          || voices.find(v => v.lang.startsWith('en'))
+          || null;
+    }
+
+    readBtn.addEventListener('click', () => {
+      if (speechSynthesis.speaking && !speechSynthesis.paused) {
+        speechSynthesis.pause();
+        setReadState('paused');
+        return;
+      }
+      if (speechSynthesis.paused) {
+        speechSynthesis.resume();
+        setReadState('playing');
+        return;
+      }
+      if (!currentStoryData?.story) return;
+      const utt = new SpeechSynthesisUtterance(currentStoryData.story);
+      // Voices may load async on first call — re-query at speak time
+      utt.voice = getBritishVoice();
+      utt.lang  = 'en-GB';
+      utt.rate  = 0.88;
+      utt.pitch = 0.9;
+      utt.onend   = () => setReadState('idle');
+      utt.onerror = () => setReadState('idle');
+      speechSynthesis.speak(utt);
+      setReadState('playing');
+    });
+
+    // Voices load asynchronously in some browsers
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = () => {};
+    }
+
     // ── Save to library ───────────────────────────────────────────
     let currentStoryData = null;
 
@@ -813,13 +983,49 @@
       }
     });
 
+    // ── Loading messages ──────────────────────────────────────────
+    const LOADING_MSGS = [
+      'Lighting the candle…',
+      'Sharpening the quill…',
+      'Choosing just the right words…',
+      'Setting the scene…',
+      'Weaving in a little magic…',
+      'Tucking in the characters…',
+      'Stirring up a gentle adventure…',
+      'Sprinkling in some wonder…',
+      'Warming up the hearth…',
+      'Letting the story breathe…',
+    ];
+    let loadingTimer = null;
+
+    function startLoadingAnim() {
+      let i = 0;
+      function show() {
+        status.classList.remove('loading-fade');
+        void status.offsetWidth; // reflow to restart animation
+        status.textContent = LOADING_MSGS[i % LOADING_MSGS.length];
+        status.classList.add('loading-fade');
+        i++;
+      }
+      show();
+      loadingTimer = setInterval(show, 2800);
+    }
+
+    function stopLoadingAnim() {
+      clearInterval(loadingTimer);
+      loadingTimer = null;
+      status.classList.remove('loading-fade');
+    }
+
     // ── Story generation ──────────────────────────────────────────
     async function generateStory() {
       cancelAnim();
+      stopReading();
       button.disabled = true;
-      status.textContent = 'Writing your story…';
       storyTitle.textContent = '';
       storyTitle.classList.remove('visible');
+      audioControls.hidden = true;
+      setReadState('idle');
       story.innerHTML = '';
       illustration.removeAttribute('src');
       illustration.style.display = 'none';
@@ -828,6 +1034,7 @@
       savePrompt.classList.remove('visible');
       saveBtn.disabled = false;
       saveBtn.textContent = 'Add it to our library';
+      startLoadingAnim();
 
       try {
         const response = await fetch('/api/generate-story', {
@@ -860,6 +1067,8 @@
           moral: adv.moral || null,
           length: adv.length,
         };
+        stopLoadingAnim();
+        audioControls.hidden = false;
         animateStory(data.story, showSavePrompt);
         status.textContent = '';
 
@@ -870,6 +1079,7 @@
           status.textContent = `Illustration unavailable: ${data.imageError}`;
         }
       } catch (err) {
+        stopLoadingAnim();
         status.textContent = `Something went wrong: ${err.message}`;
       } finally {
         button.disabled = false;
@@ -883,6 +1093,48 @@
     syncSilliness(adv.silliness);
     updateBadge();
     generateStory();
+
+    // ── PWA ───────────────────────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+
+    const installBtn  = document.getElementById('install-btn');
+    const installNudge = document.getElementById('install-nudge');
+
+    // Don't show anything if already running as installed app
+    const isStandalone = window.navigator.standalone === true
+      || window.matchMedia('(display-mode: standalone)').matches;
+
+    if (!isStandalone) {
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+      if (isIOS) {
+        // iOS has no programmatic install API — show a nudge tooltip instead
+        installBtn.hidden = false;
+        installBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          installNudge.hidden = !installNudge.hidden;
+        });
+        document.addEventListener('click', () => { installNudge.hidden = true; });
+      } else {
+        // Chrome / Android — intercept the native install prompt
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', e => {
+          e.preventDefault();
+          deferredPrompt = e;
+          installBtn.hidden = false;
+        });
+        installBtn.addEventListener('click', async () => {
+          if (!deferredPrompt) return;
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === 'accepted') installBtn.hidden = true;
+          deferredPrompt = null;
+        });
+        window.addEventListener('appinstalled', () => { installBtn.hidden = true; });
+      }
+    }
   </script>
 </body>
 </html>

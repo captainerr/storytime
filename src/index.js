@@ -15,7 +15,15 @@ Rules for the illustration prompt:
 - Absolutely no text, letters, words, numbers, or writing of any kind should appear in the described image — describe only visual scenery/characters.
 - 1-2 sentences, concise.
 
-Format your reply EXACTLY like this and nothing else: first a single title line (an evocative children's book title, no trailing punctuation), then a line containing only ===STORY===, then the full story text, then a line containing only ===ILLUSTRATION===, then the illustration prompt. Do not use JSON, markdown, headings, quotes, or any other labels.`;
+Output format — you MUST follow this exactly. Begin your response with the title on the very first line. Do not add any preamble, greeting, or explanation before or after.
+
+The Starlight Meadow
+===STORY===
+Once upon a time…[story continues]…and soon drifted off to sleep.
+===ILLUSTRATION===
+A soft watercolor scene of a small rabbit curled beneath a glowing lantern in a moonlit meadow, warm golden light, peaceful and dreamy.
+
+Replace the example above with your own original title, story, and illustration prompt. The ===STORY=== and ===ILLUSTRATION=== markers must appear exactly as shown, each on its own line, with no extra characters.`;
 
 const THEMES = [
   'a quiet forest', 'a cozy cottage', 'a starry meadow', 'a gentle river',
@@ -70,14 +78,9 @@ function resolveSilliness(rawValue) {
   return index;
 }
 
+const CF_TEXT_MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct';
+
 async function generateStory(env, request) {
-  if (!env.GROQ_API_KEY) {
-    return new Response('Server is missing GROQ_API_KEY configuration.', { status: 500 });
-  }
-
-  const model = env.GROQ_MODEL || 'llama-3.3-70b-versatile';
-  const seed = Math.floor(Math.random() * 2 ** 31);
-
   const body = await request.json().catch(() => ({}));
   const silliness = resolveSilliness(body.silliness);
   const storyGuidance = SILLINESS_TIERS[silliness].guidance;
@@ -102,43 +105,22 @@ async function generateStory(env, request) {
   if (LENGTH_OVERRIDES[lengthIndex]) userMessage += ` ${LENGTH_OVERRIDES[lengthIndex]}`;
   if (moral) userMessage += ` Weave in a gentle moral about ${moral}.`;
 
-  let groqResponse;
+  let aiResult;
   try {
-    groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 1,
-        seed,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: userMessage },
-        ],
-      }),
+    aiResult = await env.AI.run(CF_TEXT_MODEL, {
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userMessage },
+      ],
+      max_tokens: 3072,
     });
   } catch (err) {
-    return new Response(`Failed to reach Groq: ${err.message}`, { status: 500 });
+    return new Response(`Workers AI error: ${err.message}`, { status: 500 });
   }
 
-  if (!groqResponse.ok) {
-    const errorBody = (await groqResponse.text()).slice(0, 300);
-    return new Response(`Groq API error (${groqResponse.status}): ${errorBody}`, { status: 502 });
-  }
-
-  let data;
-  try {
-    data = await groqResponse.json();
-  } catch (err) {
-    return new Response(`Failed to parse Groq response: ${err.message}`, { status: 500 });
-  }
-
-  const rawContent = data?.choices?.[0]?.message?.content;
+  const rawContent = aiResult?.response;
   if (!rawContent) {
-    return new Response('Groq response did not contain a message.', { status: 502 });
+    return new Response('Workers AI did not return a response.', { status: 502 });
   }
 
   // Split title from story body on ===STORY===
@@ -151,6 +133,21 @@ async function generateStory(env, request) {
   } else {
     title = rawContent.slice(0, storyMatch.index).trim();
     storyAndImage = rawContent.slice(storyMatch.index + storyMatch[0].length);
+  }
+
+  // Strip markdown formatting from title (model may wrap in **, #, quotes, etc.)
+  if (title) {
+    // If the model added preamble lines, the title is likely the last short line
+    const titleLines = title.split('\n').map(l => l.trim()).filter(Boolean);
+    const shortLines = titleLines.filter(l => l.length <= 120 && !l.endsWith(':'));
+    title = (shortLines.length > 0 ? shortLines[shortLines.length - 1] : titleLines[titleLines.length - 1] || '');
+    title = title
+      .replace(/^#+\s*/, '')              // # heading markers
+      .replace(/^\*\*(.*)\*\*$/, '$1')    // **bold**
+      .replace(/^\*(.*)\*$/, '$1')        // *italic*
+      .replace(/^["'"'](.*?)["'"']$/, '$1') // "quoted"
+      .replace(/^Title:\s*/i, '')         // "Title:" prefix
+      .trim();
   }
 
   // Tolerant match: the model sometimes splits "===ILLUSTRATION===" across a
@@ -168,8 +165,20 @@ async function generateStory(env, request) {
     imagePrompt = storyAndImage.slice(delimiterMatch.index + delimiterMatch[0].length).trim();
   }
 
+  // Fallback: if title is still empty, pull the first line from the story
+  if (!title && story) {
+    const lines = story.split('\n');
+    const firstLine = lines.find(l => l.trim());
+    if (firstLine) {
+      title = firstLine.trim().replace(/^#+\s*/, '').replace(/^\*\*(.*)\*\*$/, '$1').slice(0, 120);
+      // Remove that line from the story so it doesn't appear twice
+      const idx = lines.indexOf(firstLine);
+      story = lines.slice(idx + 1).join('\n').trim();
+    }
+  }
+
   if (!story) {
-    return new Response('Groq response did not contain a story.', { status: 502 });
+    return new Response('Workers AI response did not contain a story.', { status: 502 });
   }
 
   // The illustration is best-effort: no prompt means no image, story still renders.
@@ -203,8 +212,6 @@ async function generateImage(env, prompt) {
 const ILLUST_PROMPT = `You are an illustration prompt writer for children's picture books. Given a bedtime story, write a single concise illustration prompt (1-2 sentences) describing one gentle, cozy scene from it. Style: soft, warm children's picture-book illustration, gentle colors, cozy lighting. No scary or violent imagery. Absolutely no text, letters, words, or numbers in the image — describe only visual scenery and characters.`;
 
 async function generateIllustration(env, request) {
-  if (!env.GROQ_API_KEY) return new Response('Server is missing GROQ_API_KEY.', { status: 500 });
-
   let body;
   try { body = await request.json(); } catch { return new Response('Invalid JSON.', { status: 400 }); }
 
@@ -212,34 +219,21 @@ async function generateIllustration(env, request) {
   if (!story || typeof story !== 'string' || !story.trim())
     return new Response('story is required.', { status: 400 });
 
-  const model = env.GROQ_MODEL || 'llama-3.3-70b-versatile';
-
-  let groqResponse;
+  let aiResult;
   try {
-    groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.GROQ_API_KEY}` },
-      body: JSON.stringify({
-        model,
-        temperature: 1,
-        messages: [
-          { role: 'system', content: ILLUST_PROMPT },
-          { role: 'user', content: story.slice(0, 4000) },
-        ],
-      }),
+    aiResult = await env.AI.run(CF_TEXT_MODEL, {
+      messages: [
+        { role: 'system', content: ILLUST_PROMPT },
+        { role: 'user', content: story.slice(0, 4000) },
+      ],
+      max_tokens: 256,
     });
   } catch (err) {
-    return new Response(`Failed to reach Groq: ${err.message}`, { status: 500 });
+    return new Response(`Workers AI error: ${err.message}`, { status: 500 });
   }
 
-  if (!groqResponse.ok) {
-    const errorBody = (await groqResponse.text()).slice(0, 300);
-    return new Response(`Groq API error (${groqResponse.status}): ${errorBody}`, { status: 502 });
-  }
-
-  const data = await groqResponse.json().catch(() => null);
-  const imagePrompt = data?.choices?.[0]?.message?.content?.trim();
-  if (!imagePrompt) return new Response('No illustration prompt from Groq.', { status: 502 });
+  const imagePrompt = aiResult?.response?.trim();
+  if (!imagePrompt) return new Response('No illustration prompt from Workers AI.', { status: 502 });
 
   const { dataUrl, error } = await generateImage(env, imagePrompt);
   return new Response(JSON.stringify({ image: dataUrl, imageError: error }), {
