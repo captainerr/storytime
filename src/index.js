@@ -2,7 +2,7 @@ const SYSTEM_PROMPT = `You are a gentle children's bedtime story writer. Write a
 
 Rules for the story:
 - Calm, gentle pacing with cozy, warm imagery. No violence, scares, or peril beyond mild, easily-resolved conflict.
-- End on a peaceful, sleepy, comforting note.
+- No matter how silly the requested tone is, the story must still end on a peaceful, sleepy, comforting note — it's still a bedtime story.
 - Roughly 600-800 words, which reads aloud in about 3-5 minutes.
 - Plain prose only: no markdown, no headings, no bullet points, no title line.
 - Write a new, original story each time; vary characters and settings.
@@ -31,7 +31,46 @@ const CHARACTERS = [
   'a shy deer', 'a small dragon', 'a kind badger', 'a wandering duckling',
 ];
 
-async function generateStory(env) {
+const SILLINESS_TIERS = [
+  {
+    label: 'Calm',
+    guidance: 'Keep the tone exactly as gentle and soothing as usual, with no jokes or silliness.',
+  },
+  {
+    label: 'Sweet',
+    guidance: 'Add just a touch of warmth and light humor here and there, but keep it mostly calm and sweet, nothing goofy.',
+  },
+  {
+    label: 'Playful',
+    guidance: 'Include some lighthearted humor and a funny little moment or two, while keeping the overall story calm.',
+  },
+  {
+    label: 'Goofy',
+    guidance: 'Make it noticeably silly: include silly wordplay, a funny mishap, and an exaggerated reaction or two, while still resolving gently.',
+  },
+  {
+    label: 'Wacky',
+    guidance: 'Make it broadly, absurdly silly throughout — silly names, ridiculous situations, funny sound effects in the prose — while still winding down to a peaceful, sleepy ending.',
+  },
+];
+
+const IMAGE_SILLINESS_GUIDANCE = [
+  '',
+  '',
+  ' The illustration can include a small playful or whimsical touch.',
+  ' The illustration can be lightly cartoonish and playful.',
+  ' The illustration can be broadly cartoonish and exaggerated, matching the wacky tone.',
+];
+
+function resolveSilliness(rawValue) {
+  const index = Number.isInteger(rawValue) ? rawValue : Number.parseInt(rawValue, 10);
+  if (!Number.isInteger(index) || index < 0 || index >= SILLINESS_TIERS.length) {
+    return 0;
+  }
+  return index;
+}
+
+async function generateStory(env, request) {
   if (!env.GROQ_API_KEY) {
     return new Response('Server is missing GROQ_API_KEY configuration.', { status: 500 });
   }
@@ -40,6 +79,11 @@ async function generateStory(env) {
   const theme = THEMES[Math.floor(Math.random() * THEMES.length)];
   const character = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
   const seed = Math.floor(Math.random() * 2 ** 31);
+
+  const body = await request.json().catch(() => ({}));
+  const silliness = resolveSilliness(body.silliness);
+  const storyGuidance = SILLINESS_TIERS[silliness].guidance;
+  const imageGuidance = IMAGE_SILLINESS_GUIDANCE[silliness];
 
   let groqResponse;
   try {
@@ -58,7 +102,7 @@ async function generateStory(env) {
           { role: 'system', content: SYSTEM_PROMPT },
           {
             role: 'user',
-            content: `Please write tonight's bedtime story. Feature ${character} as the main character, set in ${theme}.`,
+            content: `Please write tonight's bedtime story. Feature ${character} as the main character, set in ${theme}. Tone: ${storyGuidance}${imageGuidance}`,
           },
         ],
       }),
@@ -128,7 +172,7 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === '/api/generate-story' && request.method === 'POST') {
-      return generateStory(env);
+      return generateStory(env, request);
     }
 
     return env.ASSETS.fetch(request);

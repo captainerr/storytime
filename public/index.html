@@ -62,7 +62,9 @@
   }
   .controls {
     display: flex;
+    align-items: center;
     justify-content: center;
+    gap: 1.5rem;
     margin-bottom: 2rem;
   }
   button#generate {
@@ -77,6 +79,28 @@
   button#generate:disabled {
     opacity: 0.6;
     cursor: default;
+  }
+  .silly-meter-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  #silly-meter-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  #silly-meter {
+    -webkit-appearance: slider-vertical;
+    appearance: slider-vertical;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    width: 1.5rem;
+    height: 6rem;
+    accent-color: var(--button-bg);
+    background: var(--toggle-border);
+    cursor: pointer;
   }
   #status {
     text-align: center;
@@ -103,6 +127,10 @@
   <h1>🌙 Storytime</h1>
   <div class="controls">
     <button id="generate">Generate Story</button>
+    <div class="silly-meter-wrap">
+      <input type="range" id="silly-meter" min="0" max="4" step="1" value="0" aria-label="Silliness level">
+      <span id="silly-meter-label">Calm</span>
+    </div>
   </div>
   <div id="status"></div>
   <div id="story"></div>
@@ -132,6 +160,13 @@
     const status = document.getElementById('status');
     const story = document.getElementById('story');
     const illustration = document.getElementById('illustration');
+    const sillyMeter = document.getElementById('silly-meter');
+    const sillyMeterLabel = document.getElementById('silly-meter-label');
+    const SILLY_LABELS = ['Calm', 'Sweet', 'Playful', 'Goofy', 'Wacky'];
+
+    sillyMeter.addEventListener('input', () => {
+      sillyMeterLabel.textContent = SILLY_LABELS[Number(sillyMeter.value)];
+    });
 
     async function generateStory() {
       button.disabled = true;
@@ -141,7 +176,12 @@
       illustration.style.display = 'none';
 
       try {
-        const response = await fetch('/api/generate-story', { method: 'POST', cache: 'no-store' });
+        const response = await fetch('/api/generate-story', {
+          method: 'POST',
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ silliness: Number(sillyMeter.value) }),
+        });
 
         if (!response.ok) {
           const errorText = await response.text();
