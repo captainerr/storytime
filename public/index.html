@@ -521,7 +521,7 @@
 
     advOpen.addEventListener('click', openPanel);
     advClose.addEventListener('click', closePanel);
-    advDone.addEventListener('click', closePanel);
+    advDone.addEventListener('click', () => { closePanel(); generateStory(); });
 
     advOverlay.addEventListener('click', e => {
       if (e.target === advOverlay) closePanel();
