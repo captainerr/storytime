@@ -70,7 +70,7 @@ function resolveSilliness(rawValue) {
   return index;
 }
 
-const CF_TEXT_MODEL = '@cf/meta/llama-3.1-8b-instruct';
+const CF_TEXT_MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct';
 
 async function generateStory(env, request) {
   const body = await request.json().catch(() => ({}));
