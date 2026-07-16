@@ -190,6 +190,16 @@
     color: var(--muted);
     min-height: 1.6em;
     margin-bottom: 1.5rem;
+    transition: opacity 0.4s ease;
+  }
+  #status.loading-fade {
+    animation: loadingFade 2.8s ease-in-out infinite;
+  }
+  @keyframes loadingFade {
+    0%   { opacity: 0; }
+    15%  { opacity: 1; }
+    75%  { opacity: 1; }
+    100% { opacity: 0; }
   }
 
   /* ── Story title ───────────────────────────────────── */
@@ -813,11 +823,44 @@
       }
     });
 
+    // ── Loading messages ──────────────────────────────────────────
+    const LOADING_MSGS = [
+      'Lighting the candle…',
+      'Sharpening the quill…',
+      'Choosing just the right words…',
+      'Setting the scene…',
+      'Weaving in a little magic…',
+      'Tucking in the characters…',
+      'Stirring up a gentle adventure…',
+      'Sprinkling in some wonder…',
+      'Warming up the hearth…',
+      'Letting the story breathe…',
+    ];
+    let loadingTimer = null;
+
+    function startLoadingAnim() {
+      let i = 0;
+      function show() {
+        status.classList.remove('loading-fade');
+        void status.offsetWidth; // reflow to restart animation
+        status.textContent = LOADING_MSGS[i % LOADING_MSGS.length];
+        status.classList.add('loading-fade');
+        i++;
+      }
+      show();
+      loadingTimer = setInterval(show, 2800);
+    }
+
+    function stopLoadingAnim() {
+      clearInterval(loadingTimer);
+      loadingTimer = null;
+      status.classList.remove('loading-fade');
+    }
+
     // ── Story generation ──────────────────────────────────────────
     async function generateStory() {
       cancelAnim();
       button.disabled = true;
-      status.textContent = 'Writing your story…';
       storyTitle.textContent = '';
       storyTitle.classList.remove('visible');
       story.innerHTML = '';
@@ -828,6 +871,7 @@
       savePrompt.classList.remove('visible');
       saveBtn.disabled = false;
       saveBtn.textContent = 'Add it to our library';
+      startLoadingAnim();
 
       try {
         const response = await fetch('/api/generate-story', {
@@ -860,6 +904,7 @@
           moral: adv.moral || null,
           length: adv.length,
         };
+        stopLoadingAnim();
         animateStory(data.story, showSavePrompt);
         status.textContent = '';
 
@@ -870,6 +915,7 @@
           status.textContent = `Illustration unavailable: ${data.imageError}`;
         }
       } catch (err) {
+        stopLoadingAnim();
         status.textContent = `Something went wrong: ${err.message}`;
       } finally {
         button.disabled = false;
