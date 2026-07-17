@@ -2,59 +2,93 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Timer — AI Stuff for Parents</title>
-<meta name="theme-color" content="#1e1005">
+<meta name="theme-color" content="#6C5CE7">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Timer">
 <style>
 /* ── Tokens ───────────────────────────────────────────────── */
 :root {
-  --bg:      #0e0905;
-  --fg:      #f0e2c0;
-  --muted:   #8a6e47;
-  --faint:   #3d2e18;
-  --surface: #181008;
-  --border:  #2a1e0e;
-  --accent:  #c8922a;
-  --ring-empty: #2a1e0e;
+  /* Playful accent ramp — shared across themes so it pops on both */
+  --c1:#6C5CE7;  /* indigo  */
+  --c2:#FF7AA2;  /* pink    */
+  --c3:#FFC53D;  /* gold    */
+  --c4:#39D98A;  /* green   */
+  --c5:#4DA3FF;  /* blue    */
+
+  /* Light "daytime" surface */
+  --bg1:#eaf1ff;
+  --bg2:#fdeffb;
+  --fg:#2b2350;
+  --muted:#7b78a6;
+  --card:#ffffff;
+  --card-2:#f5f4ff;
+  --border:#e7e6ff;
+  --track:#e9e7fb;
+  --shadow:rgba(108,92,231,0.20);
 }
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root {
-    --bg:      #f4e9d4;
-    --fg:      #1c1208;
-    --muted:   #7a5e38;
-    --faint:   #c4b090;
-    --surface: #ede0c2;
-    --border:  #d8c9a8;
-    --accent:  #b87820;
-    --ring-empty: #d8c9a8;
+    --bg1:#0f1236;
+    --bg2:#251652;
+    --fg:#f2edff;
+    --muted:#a9a3d4;
+    --card:#1d1c44;
+    --card-2:#232152;
+    --border:rgba(255,255,255,0.10);
+    --track:rgba(255,255,255,0.13);
+    --shadow:rgba(0,0,0,0.45);
   }
 }
 :root[data-theme="light"] {
-  --bg:#f4e9d4; --fg:#1c1208; --muted:#7a5e38; --faint:#c4b090;
-  --surface:#ede0c2; --border:#d8c9a8; --accent:#b87820;
-  --ring-empty:#d8c9a8;
+  --bg1:#eaf1ff; --bg2:#fdeffb; --fg:#2b2350; --muted:#7b78a6;
+  --card:#ffffff; --card-2:#f5f4ff; --border:#e7e6ff; --track:#e9e7fb;
+  --shadow:rgba(108,92,231,0.20);
 }
 :root[data-theme="dark"] {
-  --bg:#0e0905; --fg:#f0e2c0; --muted:#8a6e47; --faint:#3d2e18;
-  --surface:#181008; --border:#2a1e0e; --accent:#c8922a;
-  --ring-empty:#2a1e0e;
+  --bg1:#0f1236; --bg2:#251652; --fg:#f2edff; --muted:#a9a3d4;
+  --card:#1d1c44; --card-2:#232152; --border:rgba(255,255,255,0.10);
+  --track:rgba(255,255,255,0.13); --shadow:rgba(0,0,0,0.45);
 }
 
 /* ── Reset ────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 body {
-  background: var(--bg);
+  background:
+    radial-gradient(120% 80% at 15% -10%, var(--bg2), transparent 60%),
+    radial-gradient(120% 90% at 90% 0%, rgba(77,163,255,0.18), transparent 55%),
+    linear-gradient(180deg, var(--bg1), var(--bg2));
+  background-attachment: fixed;
   color: var(--fg);
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic ProN',
+               'Segoe UI Rounded', 'Nunito', system-ui, -apple-system, sans-serif;
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  transition: background 0.25s, color 0.25s;
+  transition: color 0.25s;
   overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Decorative floating blobs */
+.blob {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(50px);
+  opacity: 0.35;
+  z-index: -1;
+  pointer-events: none;
+  animation: drift 16s ease-in-out infinite alternate;
+}
+.blob.b1 { width: 240px; height: 240px; background: var(--c2); top: -60px; left: -50px; }
+.blob.b2 { width: 200px; height: 200px; background: var(--c5); bottom: 8%; right: -40px; animation-delay: -6s; }
+.blob.b3 { width: 160px; height: 160px; background: var(--c3); bottom: -50px; left: 20%; animation-delay: -11s; }
+@keyframes drift {
+  from { transform: translate3d(0,0,0) scale(1); }
+  to   { transform: translate3d(20px,-24px,0) scale(1.12); }
 }
 
 /* ── Top bar ──────────────────────────────────────────────── */
@@ -62,30 +96,39 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
+  padding: max(0.9rem, env(safe-area-inset-top)) 1.1rem 0.4rem;
   flex-shrink: 0;
+  gap: 0.5rem;
 }
 .back-link {
-  font-family: system-ui, sans-serif;
-  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 700;
   color: var(--muted);
   text-decoration: none;
-  letter-spacing: 0.02em;
-  transition: color 0.15s;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  transition: color 0.15s, background 0.15s;
 }
-.back-link:hover { color: var(--fg); }
-.theme-btn {
-  width: 2.1rem; height: 2.1rem;
+.back-link:hover { color: var(--fg); background: var(--card-2); }
+.top-actions { display: flex; gap: 0.5rem; }
+.icon-btn {
+  width: 2.4rem; height: 2.4rem;
   border-radius: 50%;
   border: 1px solid var(--border);
-  background: transparent;
-  color: var(--muted);
+  background: var(--card);
+  color: var(--fg);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.95rem;
-  transition: border-color 0.15s, color 0.15s;
+  font-size: 1.05rem;
+  box-shadow: 0 4px 14px var(--shadow);
+  transition: transform 0.12s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
-.theme-btn:hover { color: var(--fg); border-color: var(--muted); }
+.icon-btn:hover { transform: translateY(-2px); }
+.icon-btn:active { transform: scale(0.92); }
 
 /* ── Main ─────────────────────────────────────────────────── */
 main {
@@ -93,259 +136,331 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1.5rem max(2rem, env(safe-area-inset-bottom));
-  gap: 1.75rem;
+  justify-content: flex-start;
+  padding: 0.4rem 1.1rem max(1.5rem, env(safe-area-inset-bottom));
+  gap: 1rem;
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
 }
 
-/* ── Timer face ───────────────────────────────────────────── */
-.timer-wrap {
+/* ── Timer stage ──────────────────────────────────────────── */
+.stage {
   position: relative;
-  width: min(72vw, 300px);
-  height: min(72vw, 300px);
+  width: min(76vw, 320px);
+  height: min(76vw, 320px);
   flex-shrink: 0;
+  margin-top: 0.4rem;
 }
+.ring { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.ring .track { fill: none; stroke: var(--track); }
+.ring .prog {
+  fill: none;
+  stroke: url(#ringGrad);
+  stroke-linecap: round;
+  filter: drop-shadow(0 3px 10px var(--shadow));
+  transition: stroke-dashoffset 0.12s linear;
+}
+.stage.celebrate .ring .prog { transition: stroke-dashoffset 0.4s ease; }
 
-.timer-face {
-  width: 100%; height: 100%;
-  border-radius: 50%;
-  background: conic-gradient(
-    from -90deg,
-    var(--accent) 0deg var(--fill, 360deg),
-    var(--ring-empty) 0deg
-  );
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 48px rgba(200,146,42,0.12);
-  transition: box-shadow 0.5s;
-}
-
-.timer-face.pulse {
-  animation: facePulse 1s ease-in-out infinite;
-}
-@keyframes facePulse {
-  0%, 100% { box-shadow: 0 0 48px rgba(200,146,42,0.12); }
-  50%       { box-shadow: 0 0 72px rgba(200,146,42,0.38); }
-}
-
-.timer-inner {
-  width: 72%; height: 72%;
-  border-radius: 50%;
-  background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-  transition: background 0.25s;
-}
-
-.time-display {
-  font-style: italic;
-  font-size: clamp(2.8rem, 14vw, 4.2rem);
-  line-height: 1;
-  color: var(--fg);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-}
-
-.timer-label {
-  font-family: system-ui, sans-serif;
-  font-size: 0.6rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--muted);
-  text-align: center;
-  padding: 0 0.5rem;
-}
-
-/* Complete overlay */
-.complete-overlay {
+.center {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  display: none;
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  pointer-events: none;
+  gap: 0.15rem;
+  text-align: center;
 }
-.complete-overlay.visible { display: flex; }
-.complete-check {
-  font-size: clamp(2rem, 10vw, 3rem);
+.mascot {
+  font-size: clamp(2.6rem, 13vw, 3.6rem);
   line-height: 1;
-  color: var(--accent);
-  font-style: italic;
+  filter: drop-shadow(0 6px 10px var(--shadow));
+  animation: bob 2.6s ease-in-out infinite;
+  will-change: transform;
 }
-.complete-word {
-  font-family: system-ui, sans-serif;
+.stage.running .mascot { animation: bob 1.4s ease-in-out infinite; }
+.stage.celebrate .mascot { animation: party 0.6s ease-in-out infinite; }
+@keyframes bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-10px) rotate(-4deg); }
+}
+@keyframes party {
+  0%, 100% { transform: translateY(0) scale(1) rotate(-8deg); }
+  50%      { transform: translateY(-14px) scale(1.15) rotate(8deg); }
+}
+.time-display {
+  font-size: clamp(2.4rem, 12vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+.activity-label {
   font-size: 0.72rem;
-  letter-spacing: 0.2em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--muted);
+  max-width: 70%;
+}
+
+/* ── Cheer message ────────────────────────────────────────── */
+.cheer {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--c1);
+  min-height: 1.5em;
+  text-align: center;
+  transition: color 0.2s;
+}
+.cheer.pop { animation: pop 0.4s ease; }
+@keyframes pop {
+  0% { transform: scale(0.8); opacity: 0.4; }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.stage.celebrate ~ .cheer, .cheer.win { color: var(--c2); }
+
+/* ── Journey track (rocket) ───────────────────────────────── */
+.journey {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+}
+.journey .rail {
+  position: absolute;
+  left: 8px; right: 8px;
+  height: 4px;
+  border-radius: 999px;
+  background: repeating-linear-gradient(90deg, var(--border) 0 8px, transparent 8px 16px);
+}
+.journey .goal {
+  position: absolute;
+  right: -4px;
+  font-size: 1.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px var(--shadow));
+}
+.journey .rocket {
+  position: absolute;
+  left: 0;
+  font-size: 1.6rem;
+  line-height: 1;
+  transform: translateX(-50%);
+  transition: left 0.12s linear;
+  filter: drop-shadow(0 3px 6px var(--shadow));
+  z-index: 1;
+}
+.stage.celebrate ~ .journey .rocket { animation: hop 0.5s ease-in-out infinite; }
+@keyframes hop {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(-8px); }
 }
 
 /* ── Controls ─────────────────────────────────────────────── */
 .controls {
   display: flex;
-  gap: 0.6rem;
+  gap: 0.7rem;
   align-items: center;
   justify-content: center;
+  width: 100%;
 }
 .btn {
-  font-family: system-ui, sans-serif;
-  font-size: 0.9rem;
-  letter-spacing: 0.03em;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 800;
   cursor: pointer;
-  border-radius: 2rem;
-  padding: 0.7rem 1.75rem;
+  border-radius: 999px;
+  padding: 0.85rem 2.2rem;
   border: none;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: transform 0.1s, box-shadow 0.15s, opacity 0.15s;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
-.btn:active { transform: scale(0.96); }
-.btn-primary  { background: var(--accent); color: #fff; }
+.btn:active { transform: scale(0.95); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  color: #fff;
+  box-shadow: 0 8px 22px var(--shadow);
+}
+.btn-primary:hover { transform: translateY(-2px); }
+.btn-primary.celebrate { animation: glow 1.1s ease-in-out infinite; }
+@keyframes glow {
+  0%, 100% { box-shadow: 0 8px 22px var(--shadow); }
+  50%      { box-shadow: 0 8px 34px var(--c2); }
+}
 .btn-secondary {
-  background: transparent;
-  color: var(--muted);
+  background: var(--card);
+  color: var(--fg);
   border: 1px solid var(--border);
+  box-shadow: 0 4px 12px var(--shadow);
 }
 .btn[hidden] { display: none; }
 
 /* ── Presets ──────────────────────────────────────────────── */
-.presets {
-  width: 100%;
-  max-width: 380px;
-}
+.presets { width: 100%; }
 .presets-label {
-  font-family: system-ui, sans-serif;
-  font-size: 0.6rem;
-  letter-spacing: 0.22em;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--faint);
+  color: var(--muted);
   text-align: center;
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.7rem;
 }
 .preset-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.45rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.55rem;
 }
 .preset-btn {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 0.85rem;
-  padding: 0.65rem 0.8rem;
+  background: var(--card);
+  border: 2px solid transparent;
+  border-radius: 1.1rem;
+  padding: 0.75rem 0.4rem;
   cursor: pointer;
-  text-align: left;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  transition: border-color 0.15s, background 0.15s;
+  gap: 0.25rem;
+  box-shadow: 0 4px 12px var(--shadow);
+  transition: transform 0.12s, border-color 0.15s;
   -webkit-tap-highlight-color: transparent;
   color: inherit;
   font-family: inherit;
 }
-.preset-btn:hover, .preset-btn:focus-visible {
-  border-color: var(--accent);
-  outline: none;
-}
-.preset-btn.selected {
-  border-color: var(--accent);
-  background: var(--faint);
-}
-.preset-emoji { font-size: 1.1rem; line-height: 1; flex-shrink: 0; }
+.preset-btn:hover { transform: translateY(-3px); }
+.preset-btn:active { transform: scale(0.95); }
+.preset-btn.selected { border-color: var(--c1); }
+.preset-btn:focus-visible { outline: none; border-color: var(--c1); }
+.preset-emoji { font-size: 1.5rem; line-height: 1; }
 .preset-name {
-  font-family: system-ui, sans-serif;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
+  font-weight: 700;
   color: var(--fg);
-  display: block;
-  line-height: 1.2;
+  line-height: 1.1;
+  text-align: center;
 }
-.preset-dur {
-  font-family: system-ui, sans-serif;
-  font-size: 0.65rem;
-  color: var(--muted);
-  display: block;
-}
+.preset-dur { font-size: 0.64rem; font-weight: 600; color: var(--muted); }
 
 /* Custom row */
 .custom-row {
   grid-column: 1 / -1;
   display: flex;
-  gap: 0.45rem;
+  gap: 0.55rem;
+  margin-top: 0.15rem;
 }
 .custom-input {
   flex: 1;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 0.85rem;
-  padding: 0.65rem 0.85rem;
-  font-family: system-ui, sans-serif;
-  font-size: 0.78rem;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 1.1rem;
+  padding: 0.75rem 1rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: var(--fg);
   outline: none;
   transition: border-color 0.15s;
   -webkit-appearance: none;
+  box-shadow: 0 4px 12px var(--shadow);
 }
-.custom-input::placeholder { color: var(--muted); }
-.custom-input:focus { border-color: var(--accent); }
+.custom-input::placeholder { color: var(--muted); font-weight: 500; }
+.custom-input:focus { border-color: var(--c1); }
 .custom-set {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--c5), var(--c1));
   color: #fff;
   border: none;
-  border-radius: 0.85rem;
-  padding: 0.65rem 1rem;
-  font-family: system-ui, sans-serif;
-  font-size: 0.78rem;
+  border-radius: 1.1rem;
+  padding: 0.75rem 1.3rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
   cursor: pointer;
   white-space: nowrap;
-  transition: opacity 0.15s;
+  box-shadow: 0 4px 12px var(--shadow);
   -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s;
 }
-.custom-set:hover { opacity: 0.85; }
+.custom-set:active { transform: scale(0.95); }
 
 /* ── Footer ───────────────────────────────────────────────── */
 footer {
-  padding: 0.85rem 1.25rem max(0.85rem, env(safe-area-inset-bottom));
+  padding: 0.7rem 1.25rem max(0.7rem, env(safe-area-inset-bottom));
   text-align: center;
-  font-family: system-ui, sans-serif;
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
-  color: var(--faint);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
   flex-shrink: 0;
 }
 footer a { color: inherit; text-decoration: none; }
 
+/* Confetti canvas */
+#confetti {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 50;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; }
+  *, *::before, *::after { transition: none !important; animation: none !important; }
 }
 </style>
 </head>
 <body>
 
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="blob b3"></div>
+<canvas id="confetti"></canvas>
+
 <div class="topbar">
   <a href="https://lullaby.aistuffforparents.com" class="back-link">← Lullaby</a>
-  <button class="theme-btn" id="theme-toggle" aria-label="Toggle theme">☽</button>
+  <div class="top-actions">
+    <button class="icon-btn" id="sound-toggle" aria-label="Toggle sound">🔊</button>
+    <button class="icon-btn" id="theme-toggle" aria-label="Toggle theme">☾</button>
+  </div>
 </div>
 
 <main>
 
-  <!-- Timer -->
-  <div class="timer-wrap">
-    <div class="timer-face" id="timer-face">
-      <div class="timer-inner">
-        <div class="time-display" id="time-display">5:00</div>
-        <div class="timer-label" id="timer-label">Tidy up</div>
-      </div>
+  <!-- Timer stage -->
+  <div class="stage" id="stage">
+    <svg class="ring" viewBox="0 0 300 300" aria-hidden="true">
+      <defs>
+        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"  stop-color="#6C5CE7"/>
+          <stop offset="50%" stop-color="#FF7AA2"/>
+          <stop offset="100%" stop-color="#FFC53D"/>
+        </linearGradient>
+      </defs>
+      <circle class="track" cx="150" cy="150" r="125" stroke-width="20"/>
+      <circle class="prog"  id="prog" cx="150" cy="150" r="125" stroke-width="20"/>
+    </svg>
+    <div class="center">
+      <div class="mascot" id="mascot">🧹</div>
+      <div class="time-display" id="time-display" role="timer" aria-live="off">5:00</div>
+      <div class="activity-label" id="activity-label">Tidy up</div>
     </div>
-    <div class="complete-overlay" id="complete-overlay">
-      <span class="complete-check">✓</span>
-      <span class="complete-word">Done!</span>
-    </div>
+  </div>
+
+  <!-- Cheer message -->
+  <div class="cheer" id="cheer" aria-live="polite">Ready when you are!</div>
+
+  <!-- Journey -->
+  <div class="journey" aria-hidden="true">
+    <div class="rail"></div>
+    <div class="rocket" id="rocket">🚀</div>
+    <div class="goal" id="goal">⭐</div>
   </div>
 
   <!-- Controls -->
@@ -354,53 +469,17 @@ footer a { color: inherit; text-decoration: none; }
     <button class="btn btn-secondary" id="reset-btn" hidden>Reset</button>
   </div>
 
-  <!-- Presets (shown when idle) -->
+  <!-- Presets -->
   <div class="presets" id="presets">
-    <p class="presets-label">Choose an activity</p>
-    <div class="preset-grid">
-
-      <button class="preset-btn" data-mins="1" data-name="Wash hands">
-        <span class="preset-emoji">🚿</span>
-        <span><span class="preset-name">Wash hands</span><span class="preset-dur">1 min</span></span>
-      </button>
-
-      <button class="preset-btn selected" data-mins="5" data-name="Tidy up">
-        <span class="preset-emoji">🧹</span>
-        <span><span class="preset-name">Tidy up</span><span class="preset-dur">5 min</span></span>
-      </button>
-
-      <button class="preset-btn" data-mins="2" data-name="Brush teeth">
-        <span class="preset-emoji">🦷</span>
-        <span><span class="preset-name">Brush teeth</span><span class="preset-dur">2 min</span></span>
-      </button>
-
-      <button class="preset-btn" data-mins="10" data-name="Bath time">
-        <span class="preset-emoji">🛁</span>
-        <span><span class="preset-name">Bath time</span><span class="preset-dur">10 min</span></span>
-      </button>
-
-      <button class="preset-btn" data-mins="10" data-name="Wind down">
-        <span class="preset-emoji">🌙</span>
-        <span><span class="preset-name">Wind down</span><span class="preset-dur">10 min</span></span>
-      </button>
-
-      <button class="preset-btn" data-mins="20" data-name="Screen time">
-        <span class="preset-emoji">📺</span>
-        <span><span class="preset-name">Screen time</span><span class="preset-dur">20 min</span></span>
-      </button>
-
-      <button class="preset-btn" data-mins="25" data-name="Homework">
-        <span class="preset-emoji">✏️</span>
-        <span><span class="preset-name">Homework</span><span class="preset-dur">25 min</span></span>
-      </button>
-
+    <p class="presets-label">Pick an activity</p>
+    <div class="preset-grid" id="preset-grid">
+      <!-- filled by JS -->
       <div class="custom-row">
         <input class="custom-input" id="custom-input"
           type="number" min="1" max="120"
-          placeholder="Custom (minutes)" inputmode="numeric">
+          placeholder="Own time (minutes)" inputmode="numeric">
         <button class="custom-set" id="custom-set">Set</button>
       </div>
-
     </div>
   </div>
 
@@ -411,189 +490,318 @@ footer a { color: inherit; text-decoration: none; }
 </footer>
 
 <script>
-// ── State ──────────────────────────────────────────────────
-let totalMs     = 5 * 60 * 1000;
-let remainingMs = totalMs;
-let startAt     = null;  // performance.now() when running started
-let rafId       = null;
-let state       = 'idle';  // idle | running | paused | complete
-let activityName = 'Tidy up';
-let wakeLock    = null;
+// ── Presets (parent-practical, kid-friendly) ──────────────────
+const PRESETS = [
+  { emoji: '🦷', name: 'Brush teeth', mins: 2,  goal: '✨' },
+  { emoji: '🚿', name: 'Wash hands',  mins: 1,  goal: '🫧' },
+  { emoji: '🧹', name: 'Tidy up',     mins: 5,  goal: '⭐' },
+  { emoji: '🛁', name: 'Bath time',   mins: 10, goal: '🧼' },
+  { emoji: '🍽️', name: 'Mealtime',    mins: 15, goal: '😋' },
+  { emoji: '🌙', name: 'Wind down',   mins: 10, goal: '💤' },
+  { emoji: '📺', name: 'Screen time', mins: 20, goal: '🎬' },
+  { emoji: '✏️', name: 'Homework',    mins: 25, goal: '🎓' },
+  { emoji: '🎨', name: 'Playtime',    mins: 15, goal: '🎉' },
+];
+const DEFAULT_INDEX = 2; // Tidy up
 
-// ── DOM ───────────────────────────────────────────────────
-const face        = document.getElementById('timer-face');
-const timeEl      = document.getElementById('time-display');
-const labelEl     = document.getElementById('timer-label');
-const startBtn    = document.getElementById('start-btn');
-const resetBtn    = document.getElementById('reset-btn');
-const presetsEl   = document.getElementById('presets');
-const overlayEl   = document.getElementById('complete-overlay');
-const customInput = document.getElementById('custom-input');
-const customSet   = document.getElementById('custom-set');
+// ── State ─────────────────────────────────────────────────────
+let totalMs      = PRESETS[DEFAULT_INDEX].mins * 60 * 1000;
+let remainingMs  = totalMs;
+let startAt      = null;      // performance.now() when the current run segment began
+let rafId        = null;
+let state        = 'idle';    // idle | running | paused | complete
+let activity     = PRESETS[DEFAULT_INDEX];
+let wakeLock     = null;
+let lastCheer    = '';
+let soundOn      = localStorage.getItem('aisfp-timer-sound') !== 'off';
 
-// ── Render ────────────────────────────────────────────────
-function setFill(fraction) {
-  face.style.setProperty('--fill', (Math.max(0, Math.min(1, fraction)) * 360) + 'deg');
-}
+// ── DOM ───────────────────────────────────────────────────────
+const stage      = document.getElementById('stage');
+const prog       = document.getElementById('prog');
+const mascotEl   = document.getElementById('mascot');
+const timeEl     = document.getElementById('time-display');
+const labelEl    = document.getElementById('activity-label');
+const cheerEl    = document.getElementById('cheer');
+const rocketEl   = document.getElementById('rocket');
+const goalEl     = document.getElementById('goal');
+const startBtn   = document.getElementById('start-btn');
+const resetBtn   = document.getElementById('reset-btn');
+const presetsEl  = document.getElementById('presets');
+const gridEl     = document.getElementById('preset-grid');
+const customInput= document.getElementById('custom-input');
+const customSet  = document.getElementById('custom-set');
+const soundBtn   = document.getElementById('sound-toggle');
+const canvas     = document.getElementById('confetti');
 
+const CIRC = 2 * Math.PI * 125;     // ring circumference
+prog.style.strokeDasharray = CIRC;
+
+// ── Render ────────────────────────────────────────────────────
 function fmtTime(ms) {
   const s   = Math.max(0, Math.ceil(ms / 1000));
   const min = Math.floor(s / 60);
   const sec = s % 60;
   return min + ':' + String(sec).padStart(2, '0');
 }
-
 function render(ms) {
+  const remainFrac = totalMs > 0 ? ms / totalMs : 0;
   timeEl.textContent = fmtTime(ms);
-  setFill(ms / totalMs);
+  // Ring drains from full → empty; offset grows as time elapses.
+  prog.style.strokeDashoffset = CIRC * (1 - Math.max(0, Math.min(1, remainFrac)));
+  // Rocket travels left → right as time elapses.
+  rocketEl.style.left = ((1 - Math.max(0, Math.min(1, remainFrac))) * 100) + '%';
 }
 
-// ── Tick ─────────────────────────────────────────────────
+// ── Cheer messages ────────────────────────────────────────────
+function cheerFor(remainFrac) {
+  if (remainFrac >= 0.75) return 'Off we go! 🚀';
+  if (remainFrac >= 0.50) return "You're doing great! ⭐";
+  if (remainFrac >= 0.25) return 'Halfway there! 🌈';
+  if (remainFrac >= 0.10) return 'Almost done! 💪';
+  return 'So close! ✨';
+}
+function setCheer(text, win) {
+  if (text === lastCheer) return;
+  lastCheer = text;
+  cheerEl.textContent = text;
+  cheerEl.classList.toggle('win', !!win);
+  cheerEl.classList.remove('pop');
+  void cheerEl.offsetWidth;   // restart animation
+  cheerEl.classList.add('pop');
+}
+
+// ── Tick ──────────────────────────────────────────────────────
 function tick(now) {
   if (state !== 'running') return;
   const left = remainingMs - (now - startAt);
-  if (left <= 0) {
-    render(0);
-    finish();
-    return;
-  }
+  if (left <= 0) { render(0); finish(); return; }
   render(left);
-  if (left <= 10000 && !face.classList.contains('pulse')) face.classList.add('pulse');
+  setCheer(cheerFor(left / totalMs));
   rafId = requestAnimationFrame(tick);
 }
 
-// ── Actions ───────────────────────────────────────────────
+// ── Actions ───────────────────────────────────────────────────
 function startRunning() {
+  ensureAudio();
   state   = 'running';
   startAt = performance.now();
   startBtn.textContent = 'Pause';
+  startBtn.classList.remove('celebrate');
   resetBtn.hidden = false;
   presetsEl.hidden = true;
-  overlayEl.classList.remove('visible');
-  face.classList.remove('pulse');
+  stage.classList.remove('celebrate');
+  stage.classList.add('running');
+  lastCheer = '';
+  setCheer(cheerFor(remainingMs / totalMs));
   requestWakeLock();
   rafId = requestAnimationFrame(tick);
 }
-
 function pauseTimer() {
   remainingMs = Math.max(0, remainingMs - (performance.now() - startAt));
   cancelAnimationFrame(rafId);
   state = 'paused';
   startBtn.textContent = 'Resume';
+  stage.classList.remove('running');
+  setCheer('Paused — ready to go! ⏸️');
   releaseWakeLock();
 }
-
 function resumeTimer() {
   state   = 'running';
   startAt = performance.now();
   startBtn.textContent = 'Pause';
+  stage.classList.add('running');
+  lastCheer = '';
   requestWakeLock();
   rafId = requestAnimationFrame(tick);
 }
-
 function resetTimer() {
   cancelAnimationFrame(rafId);
   remainingMs = totalMs;
   state = 'idle';
-  render(remainingMs);
   startBtn.textContent = 'Start';
+  startBtn.classList.remove('celebrate');
   resetBtn.hidden = true;
   presetsEl.hidden = false;
-  overlayEl.classList.remove('visible');
-  face.classList.remove('pulse');
+  stage.classList.remove('running', 'celebrate');
+  mascotEl.textContent = activity.emoji;
+  lastCheer = '';
+  setCheer('Ready when you are!');
+  render(remainingMs);
   releaseWakeLock();
 }
-
 function finish() {
   cancelAnimationFrame(rafId);
   state = 'complete';
-  face.classList.remove('pulse');
-  setFill(0);
-  overlayEl.classList.add('visible');
-  startBtn.textContent = 'Again';
+  remainingMs = totalMs;   // so "Go again" restarts from full
+  stage.classList.remove('running');
+  stage.classList.add('celebrate');
+  mascotEl.textContent = '🥳';
+  render(totalMs); // ring full again for the replay-ready state, but keep rocket at goal:
+  prog.style.strokeDashoffset = CIRC;       // show fully drained ring
+  rocketEl.style.left = '100%';
+  startBtn.textContent = 'Go again';
+  startBtn.classList.add('celebrate');
+  resetBtn.hidden = false;
+  lastCheer = '';
+  setCheer('YOU DID IT! 🎉', true);
   releaseWakeLock();
-  playChime();
+  playFanfare();
+  burstConfetti();
+  if (navigator.vibrate) { try { navigator.vibrate([80, 60, 120]); } catch (_) {} }
 }
 
-function setDuration(seconds, name) {
-  totalMs      = seconds * 1000;
-  remainingMs  = totalMs;
-  activityName = name;
-  labelEl.textContent = name;
+function setActivity(mins, act) {
+  activity    = act;
+  totalMs     = Math.round(mins * 60) * 1000;
+  remainingMs = totalMs;
+  mascotEl.textContent = act.emoji;
+  labelEl.textContent  = act.name;
+  goalEl.textContent   = act.goal || '⭐';
+  state = 'idle';
+  startBtn.textContent = 'Start';
+  startBtn.classList.remove('celebrate');
+  resetBtn.hidden = true;
+  stage.classList.remove('running', 'celebrate');
+  lastCheer = '';
+  setCheer('Ready when you are!');
   render(remainingMs);
 }
 
-// ── Button handlers ───────────────────────────────────────
+// ── Buttons ───────────────────────────────────────────────────
 startBtn.addEventListener('click', () => {
-  if (state === 'idle')     startRunning();
-  else if (state === 'running') pauseTimer();
-  else if (state === 'paused')  resumeTimer();
-  else if (state === 'complete') {
-    // restart same activity
-    remainingMs = totalMs;
-    overlayEl.classList.remove('visible');
-    face.classList.remove('pulse');
-    render(remainingMs);
-    state = 'idle';
-    startRunning();
-  }
+  if (state === 'idle')          startRunning();
+  else if (state === 'running')  pauseTimer();
+  else if (state === 'paused')   resumeTimer();
+  else if (state === 'complete') { resetTimer(); startRunning(); }
 });
-
 resetBtn.addEventListener('click', resetTimer);
 
-// ── Presets ───────────────────────────────────────────────
-document.querySelectorAll('.preset-btn').forEach(btn => {
+// ── Build preset grid ─────────────────────────────────────────
+PRESETS.forEach((p, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'preset-btn' + (i === DEFAULT_INDEX ? ' selected' : '');
+  btn.innerHTML =
+    '<span class="preset-emoji">' + p.emoji + '</span>' +
+    '<span class="preset-name">' + p.name + '</span>' +
+    '<span class="preset-dur">' + p.mins + ' min</span>';
   btn.addEventListener('click', () => {
     if (state === 'running' || state === 'paused') return;
     document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     customInput.value = '';
-    setDuration(parseInt(btn.dataset.mins, 10) * 60, btn.dataset.name);
-    state = 'idle';
-    startBtn.textContent = 'Start';
-    resetBtn.hidden = true;
-    overlayEl.classList.remove('visible');
-    face.classList.remove('pulse');
+    setActivity(p.mins, p);
   });
+  gridEl.insertBefore(btn, gridEl.querySelector('.custom-row'));
 });
 
 function applyCustom() {
-  const val = parseFloat(customInput.value);
-  if (!val || val < 0.5 || val > 120) return;
+  const val = parseInt(customInput.value, 10);
+  if (!Number.isFinite(val) || val < 1 || val > 120) {
+    customInput.focus();
+    return;
+  }
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
-  setDuration(Math.round(val * 60), 'Custom');
-  state = 'idle';
-  startBtn.textContent = 'Start';
-  resetBtn.hidden = true;
-  overlayEl.classList.remove('visible');
-  face.classList.remove('pulse');
+  setActivity(val, { emoji: '⏰', name: val + '-minute timer', goal: '🎉' });
 }
 customSet.addEventListener('click', applyCustom);
 customInput.addEventListener('keydown', e => { if (e.key === 'Enter') applyCustom(); });
 
-// ── Chime ─────────────────────────────────────────────────
-function playChime() {
+// ── Audio (fanfare) ───────────────────────────────────────────
+let audioCtx = null;
+function ensureAudio() {
+  if (!soundOn) return;
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // Ascending major triad C5 → E5 → G5
-    [[523.25, 0], [659.25, 0.38], [783.99, 0.76]].forEach(([freq, delay]) => {
-      const osc  = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      const t = ctx.currentTime + delay;
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.28, t + 0.025);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 2.2);
-      osc.start(t);
-      osc.stop(t + 2.2);
-    });
-  } catch (_) { /* audio unavailable */ }
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch (_) { audioCtx = null; }
+}
+function note(freq, start, dur, peak) {
+  const osc  = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  const t = audioCtx.currentTime + start;
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(peak, t + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  osc.start(t);
+  osc.stop(t + dur + 0.05);
+}
+function playFanfare() {
+  if (!soundOn) return;
+  ensureAudio();
+  if (!audioCtx) return;
+  // Cheerful ascending arpeggio + a sparkle on top.
+  const seq = [523.25, 659.25, 783.99, 1046.50]; // C5 E5 G5 C6
+  seq.forEach((f, i) => note(f, i * 0.13, 0.9, 0.22));
+  note(1318.51, 0.55, 1.4, 0.12); // E6 sparkle
 }
 
-// ── Wake Lock ─────────────────────────────────────────────
+// ── Confetti ──────────────────────────────────────────────────
+const ctx2d = canvas.getContext('2d');
+let confetti = [];
+let confettiRaf = null;
+const COLORS = ['#6C5CE7', '#FF7AA2', '#FFC53D', '#39D98A', '#4DA3FF'];
+
+function sizeCanvas() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width  = window.innerWidth  * dpr;
+  canvas.height = window.innerHeight * dpr;
+  ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', sizeCanvas);
+sizeCanvas();
+
+function burstConfetti() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const W = window.innerWidth;
+  const cx = W / 2, cy = window.innerHeight * 0.32;
+  for (let i = 0; i < 130; i++) {
+    const ang = Math.random() * Math.PI * 2;
+    const spd = 3 + Math.random() * 9;
+    confetti.push({
+      x: cx + (Math.random() - 0.5) * 60,
+      y: cy,
+      vx: Math.cos(ang) * spd,
+      vy: Math.sin(ang) * spd - 4,
+      size: 5 + Math.random() * 7,
+      color: COLORS[(Math.random() * COLORS.length) | 0],
+      rot: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.3,
+      life: 0,
+      ttl: 90 + Math.random() * 50,
+    });
+  }
+  if (!confettiRaf) confettiRaf = requestAnimationFrame(drawConfetti);
+}
+function drawConfetti() {
+  ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+  confetti = confetti.filter(p => p.life < p.ttl);
+  for (const p of confetti) {
+    p.life++;
+    p.vy += 0.16;          // gravity
+    p.vx *= 0.99;
+    p.x  += p.vx;
+    p.y  += p.vy;
+    p.rot += p.vr;
+    ctx2d.save();
+    ctx2d.translate(p.x, p.y);
+    ctx2d.rotate(p.rot);
+    ctx2d.globalAlpha = Math.max(0, 1 - p.life / p.ttl);
+    ctx2d.fillStyle = p.color;
+    ctx2d.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+    ctx2d.restore();
+  }
+  if (confetti.length) {
+    confettiRaf = requestAnimationFrame(drawConfetti);
+  } else {
+    ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+    confettiRaf = null;
+  }
+}
+
+// ── Wake Lock ─────────────────────────────────────────────────
 async function requestWakeLock() {
   if (!('wakeLock' in navigator)) return;
   try { wakeLock = await navigator.wakeLock.request('screen'); } catch (_) {}
@@ -601,29 +809,42 @@ async function requestWakeLock() {
 function releaseWakeLock() {
   if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
 }
-// Re-acquire if tab returns to foreground while running
 document.addEventListener('visibilitychange', () => {
   if (state === 'running' && document.visibilityState === 'visible') requestWakeLock();
 });
 
-// ── Theme ─────────────────────────────────────────────────
-const themeBtn = document.getElementById('theme-toggle');
-const root     = document.documentElement;
-const saved    = localStorage.getItem('aisfp-theme');
-if (saved) root.setAttribute('data-theme', saved);
-if (saved === 'light') themeBtn.textContent = '○';
-
-themeBtn.addEventListener('click', () => {
-  const cur    = root.getAttribute('data-theme');
-  const isDark = cur === 'dark' || (!cur && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  const next   = isDark ? 'light' : 'dark';
-  root.setAttribute('data-theme', next);
-  localStorage.setItem('aisfp-theme', next);
-  themeBtn.textContent = next === 'dark' ? '☽' : '○';
+// ── Sound toggle ──────────────────────────────────────────────
+function renderSoundBtn() { soundBtn.textContent = soundOn ? '🔊' : '🔈'; }
+renderSoundBtn();
+soundBtn.addEventListener('click', () => {
+  soundOn = !soundOn;
+  localStorage.setItem('aisfp-timer-sound', soundOn ? 'on' : 'off');
+  renderSoundBtn();
+  if (soundOn) { ensureAudio(); note && audioCtx && note(659.25, 0, 0.25, 0.18); }
 });
 
-// ── Init ──────────────────────────────────────────────────
-render(remainingMs);
+// ── Theme ─────────────────────────────────────────────────────
+const themeBtn = document.getElementById('theme-toggle');
+const root     = document.documentElement;
+const savedTheme = localStorage.getItem('aisfp-theme');
+if (savedTheme) root.setAttribute('data-theme', savedTheme);
+function renderThemeBtn() {
+  const isDark = root.getAttribute('data-theme') === 'dark' ||
+                 (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  themeBtn.textContent = isDark ? '☾' : '☀';
+}
+renderThemeBtn();
+themeBtn.addEventListener('click', () => {
+  const isDark = root.getAttribute('data-theme') === 'dark' ||
+                 (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const next = isDark ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('aisfp-theme', next);
+  renderThemeBtn();
+});
+
+// ── Init ──────────────────────────────────────────────────────
+setActivity(activity.mins, activity);
 </script>
 
 </body>
