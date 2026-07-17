@@ -1,4 +1,4 @@
-const CACHE = 'storytime-v1';
+const CACHE = 'storytime-v2';
 const SHELL = ['/', '/library'];
 
 self.addEventListener('install', e => {
