@@ -79,7 +79,7 @@
   }
 
   /* ── Fixed corner buttons ───────────────────────────── */
-  #theme-toggle, #library-link, #install-btn {
+  #theme-toggle, #library-link, #install-btn, #music-btn {
     position: fixed;
     top: 1rem;
     width: 2.75rem;
@@ -97,7 +97,9 @@
   }
   #theme-toggle { right: 1rem; }
   #library-link { right: 4.25rem; }
-  #install-btn  { right: 7.5rem; }
+  #music-btn    { right: 7.5rem; }
+  #install-btn  { right: 10.75rem; }
+  #music-btn.playing { color: var(--accent); border-color: var(--accent); }
 
   /* ── iOS install nudge ──────────────────────────────── */
   #install-nudge {
@@ -535,6 +537,7 @@
 <body>
   <button id="theme-toggle" aria-label="Toggle light/dark theme"></button>
   <a id="library-link" href="/library" aria-label="Browse the library">📚</a>
+  <button id="music-btn" aria-label="Play a lullaby" aria-pressed="false">🎵</button>
   <button id="install-btn" aria-label="Install app" hidden>
     <svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <rect x="4.5" y="2" width="11" height="16" rx="2"/>
@@ -952,6 +955,127 @@
     if (speechSynthesis.onvoiceschanged !== undefined) {
       speechSynthesis.onvoiceschanged = () => {};
     }
+
+    // ── Music-box lullaby ─────────────────────────────────────────
+    // A gentle, looping music-box tune synthesized with the Web Audio
+    // API (bell-like plucked notes) — no audio files, works offline.
+    (function () {
+      const musicBtn = document.getElementById('music-btn');
+      if (!musicBtn) return;
+
+      // Note frequencies (equal temperament)
+      const N = {
+        C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.00,
+        A4: 440.00, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25,
+      };
+
+      // Melodies as [frequency, beats] pairs (null frequency = a rest)
+      const TWINKLE = [
+        [N.C4,1],[N.C4,1],[N.G4,1],[N.G4,1],[N.A4,1],[N.A4,1],[N.G4,2],
+        [N.F4,1],[N.F4,1],[N.E4,1],[N.E4,1],[N.D4,1],[N.D4,1],[N.C4,2],
+        [N.G4,1],[N.G4,1],[N.F4,1],[N.F4,1],[N.E4,1],[N.E4,1],[N.D4,2],
+        [N.G4,1],[N.G4,1],[N.F4,1],[N.F4,1],[N.E4,1],[N.E4,1],[N.D4,2],
+        [N.C4,1],[N.C4,1],[N.G4,1],[N.G4,1],[N.A4,1],[N.A4,1],[N.G4,2],
+        [N.F4,1],[N.F4,1],[N.E4,1],[N.E4,1],[N.D4,1],[N.D4,1],[N.C4,2],
+        [null,2],
+      ];
+
+      const BRAHMS = [
+        [N.E4,1],[N.E4,1],[N.G4,2],
+        [N.E4,1],[N.E4,1],[N.G4,2],
+        [N.E4,1],[N.G4,1],[N.C5,1],[N.B4,1],[N.A4,1],[N.G4,2],
+        [N.A4,1],[N.A4,1],[N.D5,1],[N.C5,1],[N.B4,1],[N.A4,1],
+        [N.G4,1],[N.F4,1],[N.E4,1],[N.D4,1],[N.C4,3],
+        [null,2],
+      ];
+
+      const BEAT = 0.55; // seconds per beat — a slow, gentle lullaby tempo
+      const RING = 1.6;  // seconds each note rings out and decays
+
+      let ctx = null, master = null;
+      let musicOn = false, loopTimeout = null, liveNodes = [];
+
+      // One plucked music-box note: a quick attack then a long bell decay
+      function pluck(freq, startTime) {
+        if (!freq) return;
+        const gain = ctx.createGain();
+        gain.connect(master);
+        gain.gain.setValueAtTime(0.0001, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.3, startTime + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + RING);
+
+        const osc = ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        osc.connect(gain);
+
+        // A faint octave above adds the tinkly music-box shimmer
+        const shimmer = ctx.createOscillator();
+        shimmer.type = 'sine';
+        shimmer.frequency.value = freq * 2;
+        const shimmerGain = ctx.createGain();
+        shimmerGain.gain.value = 0.35;
+        shimmer.connect(shimmerGain);
+        shimmerGain.connect(gain);
+
+        const stopAt = startTime + RING + 0.05;
+        osc.start(startTime);     osc.stop(stopAt);
+        shimmer.start(startTime); shimmer.stop(stopAt);
+        liveNodes.push(osc, shimmer, gain, shimmerGain);
+      }
+
+      // Schedule one pass of the melody, then queue the next pass if still on
+      function scheduleLoop(melody) {
+        liveNodes = [];
+        let t = ctx.currentTime + 0.06;
+        let totalBeats = 0;
+        for (const [freq, beats] of melody) {
+          pluck(freq, t);
+          t += beats * BEAT;
+          totalBeats += beats;
+        }
+        loopTimeout = setTimeout(() => {
+          if (musicOn) scheduleLoop(melody);
+        }, totalBeats * BEAT * 1000);
+      }
+
+      function start() {
+        if (!ctx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          ctx = new AC();
+          master = ctx.createGain();
+          master.connect(ctx.destination);
+        }
+        if (ctx.state === 'suspended') ctx.resume();
+        master.gain.cancelScheduledValues(ctx.currentTime);
+        master.gain.setValueAtTime(0.5, ctx.currentTime);
+        musicOn = true;
+        musicBtn.classList.add('playing');
+        musicBtn.setAttribute('aria-pressed', 'true');
+        scheduleLoop(Math.random() < 0.5 ? BRAHMS : TWINKLE);
+      }
+
+      function stop() {
+        musicOn = false;
+        clearTimeout(loopTimeout);
+        loopTimeout = null;
+        if (master) {
+          const now = ctx.currentTime;
+          master.gain.cancelScheduledValues(now);
+          master.gain.setValueAtTime(master.gain.value, now);
+          master.gain.linearRampToValueAtTime(0.0001, now + 0.08);
+        }
+        liveNodes.forEach(node => {
+          try { if (node.stop) node.stop(); } catch {}
+          try { node.disconnect(); } catch {}
+        });
+        liveNodes = [];
+        musicBtn.classList.remove('playing');
+        musicBtn.setAttribute('aria-pressed', 'false');
+      }
+
+      musicBtn.addEventListener('click', () => { musicOn ? stop() : start(); });
+    })();
 
     // ── Save to library ───────────────────────────────────────────
     let currentStoryData = null;
