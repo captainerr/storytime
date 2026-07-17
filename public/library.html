@@ -419,39 +419,87 @@
         [null,2],
       ];
 
-      const BEAT = 0.55; // seconds per beat — a slow, gentle lullaby tempo
-      const RING = 1.6;  // seconds each note rings out and decays
+      const BEAT = 0.6; // seconds per beat — a slow, gentle lullaby tempo
 
-      let ctx = null, master = null;
+      // Music-box tine timbre: pure sine partials at slightly inharmonic
+      // ratios. Higher partials are quieter and decay faster, giving the
+      // bright "ping" that settles into a soft hum — instead of a flat beep.
+      const PARTIALS = [
+        { ratio: 1.0,  amp: 1.0,  decay: 2.4 },
+        { ratio: 2.0,  amp: 0.5,  decay: 1.6 },
+        { ratio: 3.01, amp: 0.35, decay: 1.1 },
+        { ratio: 4.16, amp: 0.2,  decay: 0.7 },
+        { ratio: 5.43, amp: 0.12, decay: 0.45 },
+      ];
+      const BASE = 0.14; // per-note level, kept low; the limiter guards peaks
+
+      let ctx = null, masterBus = null, dryGain = null, wetGain = null,
+          limiter = null, convolver = null;
       let musicOn = false, loopTimeout = null, liveNodes = [];
 
-      // One plucked music-box note: a quick attack then a long bell decay
+      // A short synthetic impulse response (exponentially-decaying noise) for
+      // a gentle room reverb — adds warmth with no audio file.
+      function makeImpulse(seconds, decay) {
+        const rate = ctx.sampleRate;
+        const len = Math.floor(rate * seconds);
+        const buf = ctx.createBuffer(2, len, rate);
+        for (let ch = 0; ch < 2; ch++) {
+          const data = buf.getChannelData(ch);
+          for (let i = 0; i < len; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+          }
+        }
+        return buf;
+      }
+
+      // Build the audio graph once: notes -> (dry + reverb) -> master -> limiter.
+      // The limiter is a brick wall, so overlapping notes can never clip.
+      function buildGraph() {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        ctx = new AC();
+        limiter = ctx.createDynamicsCompressor();
+        limiter.threshold.value = -10;
+        limiter.knee.value = 0;
+        limiter.ratio.value = 20;
+        limiter.attack.value = 0.003;
+        limiter.release.value = 0.25;
+        limiter.connect(ctx.destination);
+        masterBus = ctx.createGain();
+        masterBus.gain.value = 0.32;
+        masterBus.connect(limiter);
+        dryGain = ctx.createGain();
+        dryGain.gain.value = 0.9;
+        dryGain.connect(masterBus);
+        convolver = ctx.createConvolver();
+        convolver.buffer = makeImpulse(2.4, 3);
+        wetGain = ctx.createGain();
+        wetGain.gain.value = 0.22;
+        convolver.connect(wetGain);
+        wetGain.connect(masterBus);
+      }
+
+      // One music-box note: a sum of decaying sine partials, fed to dry + reverb.
       function pluck(freq, startTime) {
         if (!freq) return;
-        const gain = ctx.createGain();
-        gain.connect(master);
-        gain.gain.setValueAtTime(0.0001, startTime);
-        gain.gain.exponentialRampToValueAtTime(0.3, startTime + 0.005);
-        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + RING);
+        for (const p of PARTIALS) {
+          const osc = ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.value = freq * p.ratio;
 
-        const osc = ctx.createOscillator();
-        osc.type = 'triangle';
-        osc.frequency.value = freq;
-        osc.connect(gain);
+          const gain = ctx.createGain();
+          gain.gain.setValueAtTime(0, startTime);
+          gain.gain.linearRampToValueAtTime(BASE * p.amp, startTime + 0.004);
+          gain.gain.exponentialRampToValueAtTime(0.0001, startTime + p.decay);
 
-        // A faint octave above adds the tinkly music-box shimmer
-        const shimmer = ctx.createOscillator();
-        shimmer.type = 'sine';
-        shimmer.frequency.value = freq * 2;
-        const shimmerGain = ctx.createGain();
-        shimmerGain.gain.value = 0.35;
-        shimmer.connect(shimmerGain);
-        shimmerGain.connect(gain);
+          osc.connect(gain);
+          gain.connect(dryGain);
+          gain.connect(convolver);
 
-        const stopAt = startTime + RING + 0.05;
-        osc.start(startTime);     osc.stop(stopAt);
-        shimmer.start(startTime); shimmer.stop(stopAt);
-        liveNodes.push(osc, shimmer, gain, shimmerGain);
+          const stopAt = startTime + p.decay + 0.1;
+          osc.start(startTime);
+          osc.stop(stopAt);
+          liveNodes.push(osc, gain);
+        }
       }
 
       // Schedule one pass of the melody, then queue the next pass if still on
@@ -470,15 +518,10 @@
       }
 
       function start() {
-        if (!ctx) {
-          const AC = window.AudioContext || window.webkitAudioContext;
-          ctx = new AC();
-          master = ctx.createGain();
-          master.connect(ctx.destination);
-        }
+        if (!ctx) buildGraph();
         if (ctx.state === 'suspended') ctx.resume();
-        master.gain.cancelScheduledValues(ctx.currentTime);
-        master.gain.setValueAtTime(0.5, ctx.currentTime);
+        masterBus.gain.cancelScheduledValues(ctx.currentTime);
+        masterBus.gain.setValueAtTime(0.32, ctx.currentTime);
         musicOn = true;
         musicBtn.classList.add('playing');
         musicBtn.setAttribute('aria-pressed', 'true');
@@ -489,11 +532,11 @@
         musicOn = false;
         clearTimeout(loopTimeout);
         loopTimeout = null;
-        if (master) {
+        if (masterBus) {
           const now = ctx.currentTime;
-          master.gain.cancelScheduledValues(now);
-          master.gain.setValueAtTime(master.gain.value, now);
-          master.gain.linearRampToValueAtTime(0.0001, now + 0.08);
+          masterBus.gain.cancelScheduledValues(now);
+          masterBus.gain.setValueAtTime(masterBus.gain.value, now);
+          masterBus.gain.linearRampToValueAtTime(0.0001, now + 0.08);
         }
         liveNodes.forEach(node => {
           try { if (node.stop) node.stop(); } catch {}
