@@ -33,6 +33,10 @@ This is a single Cloudflare Worker (`src/index.js`) with static assets (`public/
 
 The option lists (`CHARACTERS`, `THEMES`, `VALID_MORALS`/moral list, silliness tiers) are **duplicated** between `src/index.js` (server-side validation) and the inline scripts in `public/index.html` / `public/library.html` (populate `<select>`s and filters client-side). When changing available options, update both sides.
 
+**API input handling is intentionally inconsistent across endpoints** — worth knowing before you "fix" it:
+- Unknown/invalid option values are handled three different ways depending on endpoint. `generateStory` never rejects them: a bad `silliness` falls back to `0` (Calm), a bad `length` to `1` (normal), and an unknown `character`/`theme` to a **random** valid pick — so a malformed request still produces a story. `saveStory` returns `400` on out-of-range `silliness`/`length` but silently coerces an unknown `character`/`theme`/`moral` to `NULL` rather than erroring. `listStories` silently drops any filter whose value isn't in the allow-list (the filter just isn't applied).
+- CORS headers are uneven: `save-story`, `stories`, and `generate-illustration` all send `Access-Control-Allow-Origin: *`, but `generate-story` sends **no** CORS header (it does set `Cache-Control: no-store`, which the others omit). Same-origin calls from the app work regardless; only cross-origin callers see the difference.
+
 **Frontend pages** (each is a standalone HTML file with its own inline JS, no shared JS modules):
 - `public/index.html` — main story generator: silliness slider, an "advanced options" overlay panel (character/theme/moral/length), typewriter-style story reveal animation, Web Speech API read-aloud, save-to-library, light/dark theme toggle persisted to `localStorage`.
 - `public/library.html` — browse/filter saved stories from `GET /api/stories` (character/theme/moral/silliness/length filters + pagination via offset/limit), on-demand illustration generation per card via `POST /api/generate-illustration`.
