@@ -10,7 +10,7 @@ Rules for the story:
 Rules for the illustration prompt:
 - Describe one specific, gentle scene from the story you just wrote: the main character, the setting, and the mood.
 - Write it as a visual description for an image generator, not as narrative prose.
-- Style: soft, warm children's picture-book illustration, gentle colors, cozy lighting.
+- Style: Studio Ghibli–inspired hand-painted animation — soft painterly backgrounds, warm natural light, lush whimsical detail, gentle expressive character design, a cozy pastel-and-earth color palette.
 - No scary, violent, or unsettling imagery.
 - Absolutely no text, letters, words, numbers, or writing of any kind should appear in the described image — describe only visual scenery/characters.
 - 1-2 sentences, concise.
@@ -21,7 +21,7 @@ The Starlight Meadow
 ===STORY===
 Once upon a time…[story continues]…and soon drifted off to sleep.
 ===ILLUSTRATION===
-A soft watercolor scene of a small rabbit curled beneath a glowing lantern in a moonlit meadow, warm golden light, peaceful and dreamy.
+A Studio Ghibli–style painterly scene of a small rabbit curled beneath a glowing lantern in a moonlit meadow, soft brushwork clouds drifting overhead, warm golden light, peaceful and dreamy.
 
 Replace the example above with your own original title, story, and illustration prompt. The ===STORY=== and ===ILLUSTRATION=== markers must appear exactly as shown, each on its own line, with no extra characters.`;
 
@@ -209,7 +209,7 @@ async function generateImage(env, prompt) {
   }
 }
 
-const ILLUST_PROMPT = `You are an illustration prompt writer for children's picture books. Given a bedtime story, write a single concise illustration prompt (1-2 sentences) describing one gentle, cozy scene from it. Style: soft, warm children's picture-book illustration, gentle colors, cozy lighting. No scary or violent imagery. Absolutely no text, letters, words, or numbers in the image — describe only visual scenery and characters.`;
+const ILLUST_PROMPT = `You are an illustration prompt writer for children's picture books. Given a bedtime story, write a single concise illustration prompt (1-2 sentences) describing one gentle, cozy scene from it. Style: Studio Ghibli–inspired hand-painted animation — soft painterly backgrounds, warm natural light, lush whimsical detail, gentle expressive character design, a cozy pastel-and-earth color palette. No scary or violent imagery. Absolutely no text, letters, words, or numbers in the image — describe only visual scenery and characters.`;
 
 async function generateIllustration(env, request) {
   let body;
