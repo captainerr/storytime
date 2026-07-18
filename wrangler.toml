@@ -11,6 +11,7 @@ routes = [
 [assets]
 directory = "./public"
 binding = "ASSETS"
+run_worker_first = true
 
 [ai]
 binding = "AI"
@@ -19,3 +20,6 @@ binding = "AI"
 binding = "DB"
 database_name = "storytime-library"
 database_id = "2331a812-9747-4019-9f5a-b3abbf08df04"
+
+[version_metadata]
+binding = "CF_VERSION_METADATA"
