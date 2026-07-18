@@ -338,6 +338,18 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // Serve timer app at timer.aistuffforparents.com
+    if (url.hostname === 'timer.aistuffforparents.com') {
+      const assetPath = (url.pathname === '/' || url.pathname === '/index.html')
+        ? '/timer.html'
+        : url.pathname;
+      url.pathname = assetPath;
+      return env.ASSETS.fetch(new Request(url.toString(), {
+        method: request.method,
+        headers: request.headers,
+      }));
+    }
+
     if (url.pathname === '/api/generate-story' && request.method === 'POST') {
       return generateStory(env, request);
     }
