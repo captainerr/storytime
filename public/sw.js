@@ -21,9 +21,13 @@ self.addEventListener('fetch', e => {
   // Never intercept API calls or non-GET requests
   if (request.method !== 'GET' || url.pathname.startsWith('/api/')) return;
 
-  // Network-first with cache fallback for HTML pages; cache-first for assets
+  // Network-first with cache fallback. Page navigations bypass the HTTP
+  // cache outright (not just the SW's own Cache Storage) — iOS Home Screen
+  // apps can otherwise get stuck replaying a stale cached document forever.
+  const fetchOptions = request.mode === 'navigate' ? { cache: 'no-store' } : {};
+
   e.respondWith(
-    fetch(request)
+    fetch(request, fetchOptions)
       .then(res => {
         if (res.ok) {
           const clone = res.clone();
