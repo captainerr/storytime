@@ -99,7 +99,11 @@ async function generateStory(env, request) {
     'Make it longer: roughly 900-1100 words (about 5-6 minutes read-aloud).',
   ];
   const lengthIndex = [0, 1, 2].includes(Number(body.length)) ? Number(body.length) : 1;
-  const moral = (body.moral && body.moral !== 'none') ? body.moral : null;
+  // Only allow known morals into the prompt. This field is otherwise
+  // free-text and gets interpolated into the model input, so an unvalidated
+  // value is a prompt-injection vector (as with saveStory/listStories, an
+  // unknown moral is simply dropped rather than passed through).
+  const moral = (body.moral && VALID_MORALS.includes(body.moral)) ? body.moral : null;
 
   let userMessage = `Please write tonight's bedtime story. Feature ${character} as the main character, set in ${theme}. Tone: ${storyGuidance}${imageGuidance}`;
   if (LENGTH_OVERRIDES[lengthIndex]) userMessage += ` ${LENGTH_OVERRIDES[lengthIndex]}`;
