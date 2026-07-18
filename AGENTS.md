@@ -14,3 +14,8 @@ Standard commands live in `package.json` (`npm run dev` = `wrangler dev`, `npm r
   npx wrangler d1 execute storytime-library --local --command "CREATE TABLE IF NOT EXISTS stories (id TEXT PRIMARY KEY, title TEXT NOT NULL, story TEXT NOT NULL, silliness INTEGER, character TEXT, theme TEXT, moral TEXT, length INTEGER, created_at INTEGER);"
   ```
 - Clean URLs: `library.html` is served at `/library` (a 307 redirect) and `index.html` at `/`. The timer / landing / brand-domain routing keys off `url.hostname`, so those alternate pages only render when the request host matches (see `CLAUDE.md`); on `localhost` you always get the main story app.
+- The paid AI endpoints (`/api/generate-story`, `/api/generate-illustration`) are per-IP rate limited (25/hour each) via a `rate_limits` D1 table. Like `stories`, that table lives only in D1 (no repo migrations) and must be created out-of-band — locally with `--local`, and in prod with `--remote`. Rate limiting **fails open**: if the table is missing (or D1 errors), requests are allowed and simply not limited, so deploying the code before creating the table is safe. To exercise limits locally, create it once:
+  ```
+  npx wrangler d1 execute storytime-library --local --command "CREATE TABLE IF NOT EXISTS rate_limits (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT NOT NULL, bucket TEXT NOT NULL, created_at INTEGER NOT NULL); CREATE INDEX IF NOT EXISTS idx_rate_limits_lookup ON rate_limits (ip, bucket, created_at); CREATE INDEX IF NOT EXISTS idx_rate_limits_cleanup ON rate_limits (created_at);"
+  ```
+  In local dev there's no real client IP, so requests bucket under a fallback key (`X-Forwarded-For` or `unknown`); pass a `CF-Connecting-IP` header to simulate distinct callers.
