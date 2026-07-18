@@ -5,7 +5,9 @@ compatibility_date = "2025-07-18"
 routes = [
   { pattern = "lullaby.aistuffforparents.com", custom_domain = true },
   { pattern = "timer.aistuffforparents.com", custom_domain = true },
-  { pattern = "storytime.onebuttonparenting.com", custom_domain = true }
+  { pattern = "storytime.onebuttonparenting.com", custom_domain = true },
+  { pattern = "www.onebuttonparenting.com", custom_domain = true },
+  { pattern = "onebuttonparenting.com", custom_domain = true }
 ]
 
 [assets]

@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One Button Parenting — Be the best storyteller in town</title>
+<meta name="description" content="Storytime writes a brand-new, beautifully illustrated bedtime story every night — one tap, zero setup. Built for busy parents who want to be the hero of bedtime.">
+<link rel="icon" href="/icon.svg">
+<meta name="theme-color" content="#1e1005">
+<!-- Open Graph / social sharing -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.onebuttonparenting.com/">
+<meta property="og:title" content="One Button Parenting">
+<meta property="og:description" content="Storytime writes a brand-new, beautifully illustrated bedtime story every night — one tap, zero setup.">
+<meta property="og:image" content="https://lullaby.aistuffforparents.com/social.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="One Button Parenting">
+<meta name="twitter:description" content="Storytime writes a brand-new, beautifully illustrated bedtime story every night — one tap, zero setup.">
+<meta name="twitter:image" content="https://lullaby.aistuffforparents.com/social.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:           #120d08;
+    --bg-2:         #1e1408;
+    --fg:           #f0e2c0;
+    --muted:        #b39a6e;
+    --faint:        #8a7350;
+    --accent:       #d4a040;
+    --accent-2:     #f5d060;
+    --card-bg:      #1c1509;
+    --card-border:  #3d2810;
+    --button-bg:    #7a3e12;
+    --button-fg:    #f5e6c8;
+    --shadow:       rgba(0,0,0,0.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg:           #faf3e2;
+      --bg-2:         #f2e5c8;
+      --fg:           #2d1a08;
+      --muted:        #7a5a32;
+      --faint:        #a3875a;
+      --accent:       #b87820;
+      --accent-2:     #8a5a12;
+      --card-bg:      #fffaf0;
+      --card-border:  #e8d8ae;
+      --button-bg:    #6b3410;
+      --button-fg:    #f2e5c8;
+      --shadow:       rgba(120,90,40,0.15);
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background:
+      radial-gradient(120% 60% at 50% -10%, var(--bg-2), transparent 60%),
+      var(--bg);
+    color: var(--fg);
+    font-family: 'Lora', serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  img, svg { display: block; max-width: 100%; }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* ── Nav ──────────────────────────────────────────────── */
+  nav.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 0;
+  }
+  .wordmark {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 1.3rem;
+    color: var(--fg);
+    text-decoration: none;
+    letter-spacing: 0.01em;
+  }
+  .nav-cta {
+    font-family: 'Lora', serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent-2);
+    text-decoration: none;
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    padding: 0.5rem 1.1rem;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .nav-cta:hover { border-color: var(--accent); color: var(--fg); }
+
+  /* ── Hero ─────────────────────────────────────────────── */
+  header.hero {
+    text-align: center;
+    padding: 3rem 0 4rem;
+  }
+  .hero-art {
+    width: 132px;
+    margin: 0 auto 1.75rem;
+    animation: float 5s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+  }
+  .kicker {
+    font-family: 'Lora', serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+  h1 {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: clamp(2.1rem, 5.5vw, 3.4rem);
+    line-height: 1.2;
+    max-width: 15ch;
+    margin: 0 auto 1.1rem;
+    color: var(--fg);
+  }
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    color: var(--muted);
+    max-width: 46ch;
+    margin: 0 auto 2.25rem;
+  }
+  .cta-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .btn-primary {
+    display: inline-block;
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--button-fg);
+    background: var(--button-bg);
+    text-decoration: none;
+    padding: 0.9rem 2.4rem;
+    border-radius: 999px;
+    box-shadow: 0 10px 30px var(--shadow);
+    transition: filter 0.15s, transform 0.15s;
+  }
+  .btn-primary:hover { filter: brightness(1.12); transform: translateY(-2px); }
+  .cta-note {
+    font-size: 0.8rem;
+    color: var(--faint);
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Trust strip ──────────────────────────────────────── */
+  .trust-strip {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem 1rem;
+    padding-bottom: 3.5rem;
+  }
+  .trust-pill {
+    font-size: 0.78rem;
+    color: var(--muted);
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    padding: 0.4rem 0.9rem;
+    white-space: nowrap;
+  }
+
+  /* ── Section shared ───────────────────────────────────── */
+  section { padding: 3.5rem 0; }
+  .section-head {
+    text-align: center;
+    max-width: 42ch;
+    margin: 0 auto 2.75rem;
+  }
+  .section-kicker {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+  }
+  h2 {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+    color: var(--fg);
+  }
+
+  /* ── Feature grid ─────────────────────────────────────── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.1rem;
+  }
+  .feature-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 1.1rem;
+    padding: 1.6rem 1.5rem;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .feature-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+  .feature-icon { font-size: 1.6rem; margin-bottom: 0.85rem; }
+  .feature-title {
+    font-family: 'EB Garamond', serif;
+    font-weight: 600;
+    font-size: 1.12rem;
+    margin-bottom: 0.45rem;
+    color: var(--fg);
+  }
+  .feature-body {
+    font-size: 0.92rem;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  /* ── How it works ─────────────────────────────────────── */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2rem;
+    counter-reset: step;
+  }
+  .step {
+    text-align: center;
+  }
+  .step-num {
+    counter-increment: step;
+    width: 2.6rem;
+    height: 2.6rem;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    background: var(--button-bg);
+    color: var(--button-fg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'EB Garamond', serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+  }
+  .step-num::before { content: counter(step); }
+  .step-title {
+    font-family: 'EB Garamond', serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin-bottom: 0.4rem;
+  }
+  .step-body {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  /* ── Quote / promise band ─────────────────────────────── */
+  .promise {
+    text-align: center;
+    padding: 3rem 0;
+  }
+  .promise blockquote {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: clamp(1.3rem, 3vw, 1.75rem);
+    max-width: 32ch;
+    margin: 0 auto;
+    color: var(--fg);
+    line-height: 1.45;
+  }
+  .promise cite {
+    display: block;
+    font-style: normal;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-top: 1.25rem;
+  }
+
+  /* ── Final CTA ────────────────────────────────────────── */
+  .final-cta {
+    text-align: center;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 1.5rem;
+    padding: 3.5rem 1.5rem;
+    margin: 1rem 0 3rem;
+  }
+  .final-cta h2 { margin-bottom: 0.75rem; }
+  .final-cta p {
+    color: var(--muted);
+    max-width: 40ch;
+    margin: 0 auto 1.75rem;
+  }
+
+  /* ── Footer ───────────────────────────────────────────── */
+  footer {
+    text-align: center;
+    padding: 2rem 0 3rem;
+    font-size: 0.78rem;
+    color: var(--faint);
+  }
+  footer a { text-decoration: none; color: var(--muted); }
+  footer a:hover { color: var(--fg); }
+  .footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 1.25rem;
+    margin-bottom: 0.9rem;
+  }
+
+  #build-version {
+    text-align: center;
+    font-family: system-ui, sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    opacity: 0.55;
+    padding-bottom: 1rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="top">
+    <a class="wordmark" href="/">One Button Parenting</a>
+    <a class="nav-cta" href="https://storytime.onebuttonparenting.com">Open Storytime →</a>
+  </nav>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <svg class="hero-art" viewBox="0 0 512 512" role="img" aria-label="An open storybook under a crescent moon and stars">
+      <circle cx="368" cy="108" r="66" fill="var(--accent-2)"/>
+      <circle cx="396" cy="92" r="57" fill="var(--bg)"/>
+      <circle cx="148" cy="98" r="6" fill="var(--accent-2)"/>
+      <circle cx="182" cy="70" r="4" fill="var(--accent-2)"/>
+      <circle cx="120" cy="62" r="4" fill="var(--accent-2)"/>
+      <circle cx="205" cy="95" r="5" fill="var(--accent-2)"/>
+      <path d="M76 212 C76 192 96 182 244 176 L244 364 C96 368 76 358 76 336 Z" fill="var(--accent)"/>
+      <path d="M436 212 C436 192 416 182 268 176 L268 364 C416 368 436 358 436 336 Z" fill="var(--accent-2)"/>
+      <rect x="244" y="176" width="24" height="188" rx="5" fill="var(--button-bg)"/>
+      <rect x="100" y="222" width="118" height="8" rx="4" fill="var(--button-fg)" opacity="0.55"/>
+      <rect x="100" y="246" width="98" height="8"  rx="4" fill="var(--button-fg)" opacity="0.55"/>
+      <rect x="100" y="270" width="108" height="8" rx="4" fill="var(--button-fg)" opacity="0.55"/>
+      <rect x="100" y="294" width="85" height="8"  rx="4" fill="var(--button-fg)" opacity="0.55"/>
+      <rect x="100" y="318" width="100" height="8" rx="4" fill="var(--button-fg)" opacity="0.55"/>
+      <rect x="294" y="222" width="118" height="8" rx="4" fill="var(--button-fg)" opacity="0.55"/>
+      <rect x="294" y="246" width="98" height="8"  rx="4" fill="var(--button-fg)" opacity="0.55"/>
+      <rect x="294" y="270" width="108" height="8" rx="4" fill="var(--button-fg)" opacity="0.55"/>
+      <rect x="294" y="294" width="85" height="8"  rx="4" fill="var(--button-fg)" opacity="0.55"/>
+      <rect x="294" y="318" width="100" height="8" rx="4" fill="var(--button-fg)" opacity="0.55"/>
+    </svg>
+
+    <p class="kicker">One Button Parenting · Storytime</p>
+    <h1>Built to help busy parents be the best storyteller in town.</h1>
+    <p class="hero-sub">
+      Tap one button. Get a brand-new bedtime story — written on the spot,
+      illustrated in seconds, and read aloud if your voice is done for the day.
+      No two nights are ever the same.
+    </p>
+    <div class="cta-row">
+      <a class="btn-primary" href="https://storytime.onebuttonparenting.com">Try Storytime — it's free</a>
+      <span class="cta-note">No account. No download. Just tap and go.</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="trust-strip">
+    <span class="trust-pill">✨ A new story every time</span>
+    <span class="trust-pill">🎨 Hand-painted illustrations</span>
+    <span class="trust-pill">🔊 Reads itself aloud</span>
+    <span class="trust-pill">🌙 Always ends peacefully</span>
+    <span class="trust-pill">📱 Installs like an app</span>
+  </div>
+</div>
+
+<section class="wrap" id="why">
+  <div class="section-head">
+    <p class="section-kicker">Why parents love it</p>
+    <h2>Everything a great bedtime story needs — none of the prep work</h2>
+  </div>
+  <div class="feature-grid">
+
+    <div class="feature-card">
+      <div class="feature-icon">🪄</div>
+      <div class="feature-title">One tap, zero setup</div>
+      <div class="feature-body">No login, no browsing a library, no decision fatigue at 8pm. Press the button and a full story is ready in moments.</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">📖</div>
+      <div class="feature-title">Never the same story twice</div>
+      <div class="feature-body">Every story is freshly written from scratch — new characters, new settings, new little adventures. You'll never hear "not this one again."</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🎚️</div>
+      <div class="feature-title">Dial the silliness</div>
+      <div class="feature-body">From Calm to Wacky, match tonight's energy. A slow, sleepy night gets a slow, sleepy story. A giggly night gets a giggly one.</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🎨</div>
+      <div class="feature-title">Gorgeous illustrations</div>
+      <div class="feature-body">Every story comes with a warm, hand-painted-style illustration of its own — a real picture-book moment, generated just for tonight.</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🔊</div>
+      <div class="feature-title">Let the app take a turn</div>
+      <div class="feature-body">Too tired to do the voices tonight? Tap read-aloud and let Storytime narrate while you both just listen and cuddle in.</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">💛</div>
+      <div class="feature-title">Weave in a little lesson</div>
+      <div class="feature-body">Choose a gentle moral — kindness, courage, patience, and more — and it's woven naturally into the story, never preachy.</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">📚</div>
+      <div class="feature-title">Build a family library</div>
+      <div class="feature-body">Save the ones you love. Browse and filter by character, theme, or mood, and revisit favorite nights whenever you want.</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🌙</div>
+      <div class="feature-title">Made for bedtime, always</div>
+      <div class="feature-body">No matter how silly it gets, every story winds down to a calm, peaceful ending — because it's still a bedtime story.</div>
+    </div>
+
+  </div>
+</section>
+
+<section class="wrap" id="how">
+  <div class="section-head">
+    <p class="section-kicker">How it works</p>
+    <h2>Three taps to tonight's story</h2>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-title">Set the mood</div>
+      <div class="step-body">Slide from Calm to Wacky, or open Customize to pick a character, setting, and a gentle lesson.</div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-title">Tap the button</div>
+      <div class="step-body">Storytime writes and illustrates a brand-new story in real time, right in front of you both.</div>
+    </div>
+    <div class="step">
+      <div class="step-num"></div>
+      <div class="step-title">Read it, or let it read</div>
+      <div class="step-body">Enjoy the story together — or tap read-aloud and let the app carry the last few tired minutes of the night.</div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap promise">
+  <blockquote>
+    "Every parent gets tired of doing the voices eventually.<br>
+    Storytime never does."
+  </blockquote>
+</div>
+
+<div class="wrap">
+  <div class="final-cta">
+    <h2>Tonight's story is one tap away</h2>
+    <p>It's free to try, it works in any browser, and it's ready whenever you are.</p>
+    <a class="btn-primary" href="https://storytime.onebuttonparenting.com">Open Storytime</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-links">
+      <a href="https://storytime.onebuttonparenting.com">Storytime</a>
+      <a href="https://www.aistuffforparents.com">AI Stuff for Parents</a>
+    </div>
+    One Button Parenting — simple tools for busy parents.
+  </div>
+</footer>
+<div id="build-version" aria-hidden="true"></div>
+
+</body>
+</html>
