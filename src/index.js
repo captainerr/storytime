@@ -334,6 +334,25 @@ async function listStories(env, url) {
   }
 }
 
+// TEMPORARY: stamps a build/version marker into the #build-version element of
+// every HTML page, so it's visible during testing which deployed version is
+// actually live (Workers Builds can leave a build "uploaded" without
+// promoting it to Active Deployment, so what's served can lag behind main).
+// Remove this once we're done chasing that class of bug.
+function withVersionStamp(response, env) {
+  const contentType = response.headers.get('Content-Type') || '';
+  if (!contentType.includes('text/html') || !env.CF_VERSION_METADATA) return response;
+
+  const { id, timestamp } = env.CF_VERSION_METADATA;
+  const shortId = id ? id.slice(0, 8) : 'dev';
+  const when = timestamp ? new Date(timestamp).toISOString().replace('T', ' ').slice(0, 16) + ' UTC' : '';
+  const label = `Build ${shortId}${when ? ' · ' + when : ''}`;
+
+  return new HTMLRewriter()
+    .on('#build-version', { element(el) { el.setInnerContent(label); } })
+    .transform(response);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -346,10 +365,11 @@ export default {
         ? '/timer.html'
         : url.pathname;
       url.pathname = assetPath;
-      return env.ASSETS.fetch(new Request(url.toString(), {
+      const res = await env.ASSETS.fetch(new Request(url.toString(), {
         method: request.method,
         headers: request.headers,
       }));
+      return withVersionStamp(res, env);
     }
 
     if (url.pathname === '/api/generate-story' && request.method === 'POST') {
@@ -365,6 +385,7 @@ export default {
       return generateIllustration(env, request);
     }
 
-    return env.ASSETS.fetch(request);
+    const res = await env.ASSETS.fetch(request);
+    return withVersionStamp(res, env);
   },
 };
