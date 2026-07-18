@@ -80,6 +80,58 @@ function resolveSilliness(rawValue) {
 
 const CF_TEXT_MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct';
 
+// Per-IP rate limiting for the paid Workers AI endpoints. Generous by design:
+// the limits are meant to stop egregious/automated abuse, not to inconvenience
+// a real user (25 generations/hour comfortably covers normal play). Backed by
+// D1 (a `rate_limits` table) as a rolling-window request log keyed by client IP.
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour rolling window
+const RATE_LIMITS = {
+  story: 25,        // POST /api/generate-story  — stories per hour per IP
+  illustration: 25, // POST /api/generate-illustration — images per hour per IP
+};
+
+// Returns a 429 Response when the caller is over the limit, otherwise records
+// this request and returns null (allow). Fails OPEN on any error (missing table,
+// D1 unavailable, etc.) so rate limiting can never take the app down — worst
+// case it simply doesn't limit until the `rate_limits` table exists.
+async function enforceRateLimit(env, request, bucket) {
+  const max = RATE_LIMITS[bucket];
+  if (!env.DB || !max) return null;
+
+  // CF-Connecting-IP is set by Cloudflare in production; fall back to
+  // X-Forwarded-For (dev/proxied) and finally a constant so we still limit.
+  const ip = request.headers.get('CF-Connecting-IP')
+    || (request.headers.get('X-Forwarded-For') || '').split(',')[0].trim()
+    || 'unknown';
+
+  const now = Date.now();
+  const since = now - RATE_LIMIT_WINDOW_MS;
+
+  try {
+    const row = await env.DB.prepare(
+      'SELECT COUNT(*) AS n FROM rate_limits WHERE ip = ? AND bucket = ? AND created_at > ?'
+    ).bind(ip, bucket, since).first();
+
+    if ((row?.n ?? 0) >= max) {
+      return new Response(
+        `You've reached the limit of ${max} per hour. Please try again a little later.`,
+        { status: 429, headers: { 'Retry-After': String(Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)) } }
+      );
+    }
+
+    // Record this request and opportunistically prune expired rows so the
+    // table stays small without needing a separate cleanup job.
+    await env.DB.batch([
+      env.DB.prepare('INSERT INTO rate_limits (ip, bucket, created_at) VALUES (?, ?, ?)').bind(ip, bucket, now),
+      env.DB.prepare('DELETE FROM rate_limits WHERE created_at < ?').bind(since),
+    ]);
+    return null;
+  } catch (err) {
+    console.error('Rate limit check failed (allowing request):', err);
+    return null; // fail open
+  }
+}
+
 async function generateStory(env, request) {
   const body = await request.json().catch(() => ({}));
   const silliness = resolveSilliness(body.silliness);
@@ -392,6 +444,8 @@ export default {
     }
 
     if (url.pathname === '/api/generate-story' && request.method === 'POST') {
+      const limited = await enforceRateLimit(env, request, 'story');
+      if (limited) return limited;
       return generateStory(env, request);
     }
     if (url.pathname === '/api/save-story' && request.method === 'POST') {
@@ -401,6 +455,8 @@ export default {
       return listStories(env, url);
     }
     if (url.pathname === '/api/generate-illustration' && request.method === 'POST') {
+      const limited = await enforceRateLimit(env, request, 'illustration');
+      if (limited) return limited;
       return generateIllustration(env, request);
     }
 
