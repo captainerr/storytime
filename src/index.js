@@ -338,8 +338,10 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // Serve timer app at timer.aistuffforparents.com
-    if (url.hostname === 'timer.aistuffforparents.com') {
+    // Serve the timer app on any `timer.*` host (e.g. timer.aistuffforparents.com).
+    // Every other hostname falls through to the story app below, so adding new
+    // domains for the main app never needs a code change here.
+    if (url.hostname.startsWith('timer.')) {
       const assetPath = (url.pathname === '/' || url.pathname === '/index.html')
         ? '/timer.html'
         : url.pathname;
