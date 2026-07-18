@@ -372,6 +372,21 @@ export default {
       return withVersionStamp(res, env);
     }
 
+    // Serve the marketing landing page on the onebuttonparenting.com brand
+    // domain (with or without www) — links out to the story app rather than
+    // serving it directly.
+    if (url.hostname === 'www.onebuttonparenting.com' || url.hostname === 'onebuttonparenting.com') {
+      const assetPath = (url.pathname === '/' || url.pathname === '/index.html')
+        ? '/landing.html'
+        : url.pathname;
+      url.pathname = assetPath;
+      const res = await env.ASSETS.fetch(new Request(url.toString(), {
+        method: request.method,
+        headers: request.headers,
+      }));
+      return withVersionStamp(res, env);
+    }
+
     if (url.pathname === '/api/generate-story' && request.method === 'POST') {
       return generateStory(env, request);
     }
